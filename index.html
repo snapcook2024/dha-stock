@@ -224,6 +224,20 @@
   .tbl td.num, .tbl th.num{ text-align:right; font-family:var(--mono); font-variant-numeric:tabular-nums; }
   .scroll{ overflow-x:auto; }
 
+  .shipchip{
+    font-family:var(--ui); font-size:11.5px; font-weight:600; padding:5px 10px; border-radius:999px;
+    border:1px solid var(--line); cursor:pointer; background:#F3F7F2; color:var(--ink-2); white-space:nowrap;
+  }
+  .shipchip.pending{ background:var(--marigold-soft); border-color:#E7D3A6; color:var(--marigold); }
+  .shipchip.shipped{ background:var(--plum-soft); border-color:#CFE0D5; color:var(--plum); }
+  .shipchip.delivered{ background:var(--teal-soft); border-color:#CFE0D5; color:var(--teal); }
+  .paychip{
+    font-family:var(--ui); font-size:11px; font-weight:600; padding:4px 9px; border-radius:999px;
+    border:1px solid var(--line); cursor:pointer; background:#F3F7F2; color:var(--ink-2); white-space:nowrap;
+  }
+  .paychip.paid{ background:var(--teal-soft); border-color:#CFE0D5; color:var(--teal); }
+  .paychip.partial{ background:var(--marigold-soft); border-color:#E7D3A6; color:var(--marigold); }
+  .paychip.unpaid{ background:var(--madder-soft); border-color:#EFC4BB; color:var(--madder); }
   .toolbar{ display:flex; gap:11px; align-items:center; flex-wrap:wrap; margin-bottom:18px; }
   .toolbar .grow{ flex:1 1 220px; }
 
@@ -408,9 +422,9 @@
   const IMG_PREFIX = "cim:img:";
 
   const SCHEMA = 3;   // 1 = single photo, 2 = photo list, 3 = design codes
-  let S = { schema: SCHEMA, rev: 0, rate: 2.60, lowStock: 2, nextCode: 1, lastBackupAt: 0, items: [], sales: [] };
+  let S = { schema: SCHEMA, rev: 0, rate: 2.60, lowStock: 2, nextCode: 1, lastBackupAt: 0, items: [], sales: [], customers: [] };
   let IMG = {};
-  let view = { tab:"dash", q:"", cat:"", month:"" };
+  let view = { tab:"dash", q:"", cat:"", month:"", ship:"" };
 
   const HANGER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8a2.5 2.5 0 1 1 2.5-2.5"/><path d="M12 8v2.2L3.6 15.7A1.6 1.6 0 0 0 4.5 18.7h15a1.6 1.6 0 0 0 .9-2.9L12 10.2"/></svg>';
 
@@ -429,11 +443,43 @@
   const unitProfit = it => n(it.sellINR) - costINR(it.buyTHB, S.rate);
   const marginPct = it => n(it.sellINR) > 0 ? (unitProfit(it) / n(it.sellINR)) * 100 : 0;
   const stockOf = it => (it.variants||[]).reduce((a,v)=> a + n(v.qty), 0);
-  const saleProfit = s => n(s.qty) * (n(s.unitSellINR) - costINR(s.buyTHB, s.rate));
+  /* Profit on a parcel = margin on the goods, plus whatever the customer paid
+     towards postage, minus what the courier actually charged you. If you ship
+     free, the courier cost comes straight out of your margin - which is the
+     whole point of tracking it. */
+  const saleGoods  = s => n(s.qty) * n(s.unitSellINR);
+  const saleGross  = s => saleGoods(s) + n(s.shipCharged);
+  const saleProfit = s => n(s.qty) * (n(s.unitSellINR) - costINR(s.buyTHB, s.rate))
+                          + n(s.shipCharged) - n(s.shipCost);
+  const salePaid   = s => (!s.pay || s.pay === "paid") ? saleGross(s) : n(s.paid);
+  const saleDue    = s => Math.max(0, saleGross(s) - salePaid(s));
+  const PAY = { paid:"Paid", partial:"Part paid", unpaid:"Unpaid" };
   const vlabel = v => [v.size, v.color].filter(Boolean).join(" \u00B7 ") || "Standard";
   // photos are held as a list of ids on the design; the first one is the cover
   const MAX_PICS = 24;
   const photosOf = it => (it.photos||[]).slice();
+
+  /* ---------- customers & shipping ----------
+     Customers are their own records so one address is stored once and reused.
+     Each sale also keeps a snapshot of the name, phone and address it was
+     shipped to - if the customer later moves, old parcels still show where
+     they actually went. */
+  const SHIP = { pending:"To pack", shipped:"Shipped", delivered:"Delivered" };
+  const custById = id => S.customers.find(function(c){ return c.id === id; });
+  function addrLines(o){
+    return [o.address, [o.city, o.state, o.pincode].filter(Boolean).join(" ")].filter(Boolean).join("\n");
+  }
+  function fullAddr(sale){
+    return [sale.custName, sale.custPhone, sale.custAddr].filter(Boolean).join("\n");
+  }
+  async function copyText(txt){
+    try { await navigator.clipboard.writeText(txt); toast("Address copied"); return; } catch(e){}
+    modal("Address", '<textarea readonly style="width:100%;height:150px;font-family:var(--mono);font-size:13px;'+
+      'padding:12px;border:1px solid var(--line);border-radius:11px">'+esc(txt)+'</textarea>'+
+      '<p style="margin:0;font-size:12.5px;color:var(--ink-3)">Select the text above and copy it.</p>',
+      '<button class="btn ghost" id="cp-x">Close</button>');
+    $("#cp-x").onclick = closeModal;
+  }
 
   /* Only cover photos are held in memory. The rest are fetched when you
      actually open a design, so a catalogue with 20+ shots each still starts
@@ -636,20 +682,24 @@
 
   async function load(){
     await pickTier();
+    let backfilledPay = false;
     try {
       const v = await KV.get(DATA_KEY);
       if (v){
         const d = JSON.parse(v);
         S = Object.assign(S, d);
-        S.items = S.items || []; S.sales = S.sales || [];
+        S.items = S.items || []; S.sales = S.sales || []; S.customers = S.customers || [];
         S.rate = n(S.rate) || 1;
         S.lowStock = Math.max(0, Math.round(n(S.lowStock)));
       }
     } catch(e){}
+    // sales recorded before payment tracking existed were completed sales
+    S.sales.forEach(function(x){ if (!x.pay){ x.pay = "paid"; backfilledPay = true; } });
+
     S.schema = SCHEMA;   // shape is repaired by the checks below, not by this number
 
     // designs saved before multi-photo kept their one photo under the design id
-    let backfilled = false;
+    let backfilled = backfilledPay;
     for (let i = 0; i < S.items.length; i++){
       const it = S.items[i];
       if (!Array.isArray(it.photos)){
@@ -848,6 +898,8 @@
     const mUnits = mSales.reduce(function(a,s){ return a + n(s.qty); }, 0);
     const allRev = S.sales.reduce(function(a,s){ return a + n(s.qty)*n(s.unitSellINR); }, 0);
     const allProfit = S.sales.reduce(function(a,s){ return a + saleProfit(s); }, 0);
+    const owedAll = S.sales.reduce(function(a,s){ return a + saleDue(s); }, 0);
+    const owedAllCount = S.sales.filter(function(s){ return saleDue(s) > 0; }).length;
 
     const low = [];
     S.items.forEach(function(it){ (it.variants||[]).forEach(function(v){
@@ -877,9 +929,21 @@
         kpi("Money in", inr(mRev), mUnits+" pieces sold", "", "accent")+
         kpi("Profit earned", inr(mProfit), (mRev>0?(mProfit/mRev*100).toFixed(0):"0")+"% margin", mProfit>=0?"pos":"neg")+
         kpi("All-time sales", inr(allRev), S.sales.length+" entries")+
-        kpi("All-time profit", inr(allProfit), "after cost of goods", allProfit>=0?"pos":"neg")+
+        kpi("All-time profit", inr(allProfit), "after goods and shipping", allProfit>=0?"pos":"neg")+
+        kpi("Still owed to you", inr(owedAll), owedAllCount+" parcel"+(owedAllCount===1?"":"s")+" unpaid", owedAll>0?"neg":"pos")+
       '</div>'+
 
+      (function(){
+        const pend = S.sales.filter(function(x){ return (x.ship||"pending")==="pending" && x.custName; });
+        if (!pend.length) return "";
+        return '<h2 class="sec">Parcels to pack <span class="cnt">'+pend.length+'</span></h2>'+
+          '<div class="card scroll"><table class="tbl"><thead><tr><th>Ship to</th><th>Design</th><th></th></tr></thead><tbody>'+
+          pend.slice(0,10).map(function(x){
+            return '<tr><td>'+esc(x.custName)+(x.custPhone?'<div class="money" style="font-size:11.5px;color:var(--ink-3)">'+esc(x.custPhone)+'</div>':'')+'</td>'+
+              '<td>'+esc(x.itemName||"")+'<div class="muted" style="font-size:12px">'+esc(x.variantLabel||"")+'</div></td>'+
+              '<td style="text-align:right"><button class="btn ghost sm" data-pack="'+x.id+'">Parcel</button></td></tr>';
+          }).join("")+'</tbody></table></div>';
+      })()+
       (low.length ?
         '<h2 class="sec">Running low <span class="cnt">'+low.length+'</span></h2>'+
         '<div class="card scroll"><table class="tbl"><thead><tr>'+
@@ -900,6 +964,9 @@
           '<td class="num '+(e[1].profit>=0?'pos':'neg')+'">'+inr(e[1].profit)+'</td></tr>';
         }).join("")+'</tbody></table></div>' : "");
 
+    el.querySelectorAll("[data-pack]").forEach(function(b){
+      b.onclick = function(){ shipModal(S.sales.find(function(x){ return x.id===b.dataset.pack; })); };
+    });
     el.querySelectorAll("[data-restock]").forEach(function(b){
       b.onclick = function(){ stockModal(S.items.find(function(i){ return i.id===b.dataset.restock; })); };
     });
@@ -993,6 +1060,102 @@
           '<button class="btn ghost sm icon" data-edit="'+it.id+'" title="Edit design" aria-label="Edit design">\u270E</button>'+
         '</div>'+
       '</div></article>';
+  }
+
+  /* ---------- shipment ---------- */
+  function shipModal(sale){
+    if (!sale) return;
+    const c = sale.customerId ? custById(sale.customerId) : null;
+    modal("Parcel & payment \u00B7 "+(sale.custName || sale.itemName),
+      '<div class="calc" style="font-size:12.5px"><div><span>'+esc(sale.itemCode||"")+' '+esc(sale.itemName||"")+'</span>'+
+        '<span>'+n(sale.qty)+' \u00D7 '+inr(sale.unitSellINR)+'</span></div></div>'+
+      '<div class="row">'+
+        '<label class="fld"><span>Name</span><input type="text" id="p-name" value="'+esc(sale.custName||"")+'"></label>'+
+        '<label class="fld"><span>Phone</span><input type="text" id="p-phone" value="'+esc(sale.custPhone||"")+'"></label>'+
+      '</div>'+
+      '<label class="fld"><span>Address</span><input type="text" id="p-addr" value="'+esc((sale.custAddr||"").split("\n")[0]||"")+'" placeholder="House, street, area"></label>'+
+      '<div class="row">'+
+        '<label class="fld"><span>City</span><input type="text" id="p-city" value="'+esc(c?c.city||"":"")+'"></label>'+
+        '<label class="fld"><span>State</span><input type="text" id="p-state" value="'+esc(c?c.state||"":"")+'"></label>'+
+        '<label class="fld" style="flex:0 0 120px"><span>PIN code</span><input type="text" id="p-pin" value="'+esc(c?c.pincode||"":"")+'"></label>'+
+      '</div>'+
+      '<div class="row">'+
+        '<label class="fld"><span>Status</span><select id="p-status">'+
+          Object.keys(SHIP).map(function(k){
+            return '<option value="'+k+'" '+((sale.ship||"pending")===k?'selected':'')+'>'+SHIP[k]+'</option>';
+          }).join("")+'</select></label>'+
+        '<label class="fld"><span>Courier</span><input type="text" id="p-courier" value="'+esc(sale.courier||"")+'" placeholder="DTDC, India Post\u2026"></label>'+
+        '<label class="fld"><span>Tracking no.</span><input type="text" id="p-track" value="'+esc(sale.tracking||"")+'"></label>'+
+      '</div>'+
+      '<button class="btn ghost sm" id="p-copy" style="align-self:flex-start">Copy address for courier</button>'+
+      '<div style="border-top:1px solid var(--line-2);padding-top:15px"><span class="eyebrow" style="display:block;margin-bottom:9px">Shipping</span>'+
+        '<div class="row">'+
+          '<label class="fld"><span>Courier cost (\u20B9)</span><input type="number" id="p-shipcost" min="0" step="1" value="'+n(sale.shipCost)+'"></label>'+
+          '<label class="fld"><span>Charged to customer (\u20B9)</span><input type="number" id="p-shipchg" min="0" step="1" value="'+n(sale.shipCharged)+'"></label>'+
+        '</div></div>'+
+      '<div><span class="eyebrow" style="display:block;margin-bottom:9px">Payment</span>'+
+        '<div class="row">'+
+          '<label class="fld"><span>Status</span><select id="p-pay">'+
+            Object.keys(PAY).map(function(k){
+              return '<option value="'+k+'" '+((sale.pay||"unpaid")===k?'selected':'')+'>'+PAY[k]+'</option>';
+            }).join("")+'</select></label>'+
+          '<label class="fld"><span>Received so far (\u20B9)</span><input type="number" id="p-paid" min="0" step="1" value="'+n(sale.paid)+'"></label>'+
+          '<label class="fld"><span>How</span><input type="text" id="p-method" value="'+esc(sale.payMethod||"")+'" placeholder="UPI, transfer, COD\u2026"></label>'+
+        '</div></div>'+
+      '<div class="calc" id="p-calc"></div>',
+      '<button class="btn ghost" id="p-cancel">Cancel</button><button class="btn primary" id="p-save">Save</button>');
+
+    function pcalc(){
+      const goods = saleGoods(sale);
+      const chg = n($("#p-shipchg").value), cost = n($("#p-shipcost").value);
+      const status = $("#p-pay").value;
+      const gross = goods + chg;
+      const got = status === "paid" ? gross : n($("#p-paid").value);
+      const due = Math.max(0, gross - got);
+      const profit = n(sale.qty) * (n(sale.unitSellINR) - costINR(sale.buyTHB, sale.rate)) + chg - cost;
+      $("#p-calc").innerHTML =
+        '<div><span>Goods</span><span>'+inr(goods)+'</span></div>'+
+        '<div><span>Shipping charged</span><span>'+(chg?'+'+inr(chg):inr(0))+'</span></div>'+
+        '<div><span>Courier cost</span><span class="'+(cost?'neg':'')+'">'+(cost?'-'+inr(cost):inr(0))+'</span></div>'+
+        '<div class="tot"><span>Profit on this parcel</span><span class="'+(profit>=0?'pos':'neg')+'">'+inr(profit)+'</span></div>'+
+        '<div style="font-size:12px"><span>Still owed</span><span class="'+(due>0?'neg':'pos')+'">'+inr(due)+'</span></div>';
+    }
+    ["p-shipcost","p-shipchg","p-paid"].forEach(function(id){ $("#"+id).oninput = pcalc; });
+    $("#p-pay").onchange = pcalc;
+    pcalc();
+
+    $("#p-copy").onclick = function(){
+      copyText([$("#p-name").value, $("#p-phone").value, $("#p-addr").value,
+        [$("#p-city").value, $("#p-state").value, $("#p-pin").value].filter(Boolean).join(" ")]
+        .filter(Boolean).join("\n"));
+    };
+    $("#p-cancel").onclick = closeModal;
+    $("#p-save").onclick = async function(){
+      const parts = {
+        name: $("#p-name").value.trim(), phone: $("#p-phone").value.trim(),
+        address: $("#p-addr").value.trim(), city: $("#p-city").value.trim(),
+        state: $("#p-state").value.trim(), pincode: $("#p-pin").value.trim()
+      };
+      sale.custName = parts.name; sale.custPhone = parts.phone; sale.custAddr = addrLines(parts);
+      sale.ship = $("#p-status").value;
+      sale.courier = $("#p-courier").value.trim();
+      sale.tracking = $("#p-track").value.trim();
+      sale.shipCost = n($("#p-shipcost").value);
+      sale.shipCharged = n($("#p-shipchg").value);
+      sale.payMethod = $("#p-method").value.trim();
+      sale.paid = n($("#p-paid").value);
+      sale.pay = $("#p-pay").value;
+      if (sale.pay !== "paid" && sale.paid >= saleGross(sale) && saleGross(sale) > 0) sale.pay = "paid";
+      // keep the customer record in step, so the next order pre-fills correctly
+      if (c){ c.name = parts.name || c.name; c.phone = parts.phone; c.address = parts.address;
+              c.city = parts.city; c.state = parts.state; c.pincode = parts.pincode; }
+      else if (parts.name || parts.phone || parts.address){
+        const nc = Object.assign({ id: uid(), createdAt: Date.now() }, parts);
+        S.customers.push(nc); sale.customerId = nc.id;
+      }
+      const ok = await save(); closeModal(); render();
+      toast(ok ? "Parcel details saved" : "NOT SAVED \u2014 read the warning at the top");
+    };
   }
 
   /* ---------- photo recovery ----------
@@ -1252,8 +1415,18 @@
       '</div>'+
       '<div class="row">'+
         '<label class="fld"><span>Date</span><input type="date" id="s-date" value="'+today()+'"></label>'+
-        '<label class="fld"><span>Sold to / where</span><input type="text" id="s-who" placeholder="Optional"></label>'+
+        '<label class="fld"><span>Payment</span><select id="s-pay">'+
+          '<option value="paid">Paid</option><option value="unpaid">Not paid yet</option>'+
+          '<option value="partial">Part paid</option></select></label>'+
       '</div>'+
+      '<label class="fld"><span>Customer</span><select id="s-cust">'+
+        '<option value="">No details / walk-in</option>'+
+        S.customers.slice().sort(function(a,b){ return a.name.localeCompare(b.name); }).map(function(c){
+          return '<option value="'+c.id+'">'+esc(c.name + (c.phone ? " \u00B7 "+c.phone : ""))+'</option>';
+        }).join("")+
+        '<option value="__new">+ New customer</option>'+
+      '</select></label>'+
+      '<div id="s-cbox"></div>'+
       '<div class="calc" id="s-calc"></div>',
       '<button class="btn ghost" id="s-cancel">Cancel</button><button class="btn primary" id="s-ok">Record sale</button>'
     );
@@ -1278,6 +1451,27 @@
         calc();
       };
     });
+    function drawCust(){
+      const v = $("#s-cust").value;
+      const box = $("#s-cbox");
+      if (v === "__new"){
+        box.innerHTML =
+          '<div class="row"><label class="fld"><span>Name</span><input type="text" id="c-name" placeholder="Customer name"></label>'+
+          '<label class="fld"><span>Phone</span><input type="text" id="c-phone" placeholder="+91\u2026"></label></div>'+
+          '<label class="fld" style="margin-top:11px"><span>Address</span><input type="text" id="c-addr" placeholder="House, street, area"></label>'+
+          '<div class="row" style="margin-top:11px">'+
+            '<label class="fld"><span>City</span><input type="text" id="c-city"></label>'+
+            '<label class="fld"><span>State</span><input type="text" id="c-state"></label>'+
+            '<label class="fld" style="flex:0 0 120px"><span>PIN code</span><input type="text" id="c-pin"></label>'+
+          '</div>';
+      } else if (v){
+        const c = custById(v);
+        box.innerHTML = c ? '<div class="calc" style="font-size:12.5px"><div><span>Ships to</span>'+
+          '<span style="text-align:right;white-space:pre-line">'+esc(addrLines(c) || "no address on file")+'</span></div></div>' : '';
+      } else box.innerHTML = "";
+    }
+    $("#s-cust").onchange = drawCust;
+    drawCust();
     $("#s-qty").oninput = calc; $("#s-price").oninput = calc;
     calc();
     $("#s-cancel").onclick = closeModal;
@@ -1293,8 +1487,29 @@
         buyTHB: n(it.buyTHB),
         rate: n(S.rate),
         date: $("#s-date").value || today(),
-        who: $("#s-who").value.trim()
+        ship: "pending", courier: "", tracking: "",
+        shipCost: 0, shipCharged: 0,
+        pay: $("#s-pay").value, paid: 0, payMethod: ""
       });
+      const sale = S.sales[S.sales.length - 1];
+      const pick = $("#s-cust").value;
+      if (pick === "__new"){
+        const c = {
+          id: uid(),
+          name: $("#c-name").value.trim() || "Customer",
+          phone: $("#c-phone").value.trim(),
+          address: $("#c-addr").value.trim(),
+          city: $("#c-city").value.trim(),
+          state: $("#c-state").value.trim(),
+          pincode: $("#c-pin").value.trim(),
+          createdAt: Date.now()
+        };
+        S.customers.push(c);
+        sale.customerId = c.id; sale.custName = c.name; sale.custPhone = c.phone; sale.custAddr = addrLines(c);
+      } else if (pick){
+        const c = custById(pick);
+        if (c){ sale.customerId = c.id; sale.custName = c.name; sale.custPhone = c.phone; sale.custAddr = addrLines(c); }
+      }
       const ok = await save(); closeModal(); render();
       toast(ok ? "Sale recorded" : "NOT SAVED \u2014 read the warning at the top of the page");
     };
@@ -1348,26 +1563,37 @@
     const months = [...new Set(S.sales.map(function(s){ return ym(s.date); }))].sort().reverse();
     let list = S.sales.slice().sort(function(a,b){ return (b.date||"").localeCompare(a.date||"") || (b.id>a.id?1:-1); });
     if (view.month) list = list.filter(function(s){ return ym(s.date)===view.month; });
+    if (view.ship) list = list.filter(function(s){ return (s.ship||"pending")===view.ship; });
 
     const rev = list.reduce(function(a,s){ return a + n(s.qty)*n(s.unitSellINR); }, 0);
     const pro = list.reduce(function(a,s){ return a + saleProfit(s); }, 0);
     const units = list.reduce(function(a,s){ return a + n(s.qty); }, 0);
+    const shipNet = list.reduce(function(a,s){ return a + n(s.shipCharged) - n(s.shipCost); }, 0);
+    const owed = list.reduce(function(a,s){ return a + saleDue(s); }, 0);
+    const owedCount = list.filter(function(s){ return saleDue(s) > 0; }).length;
 
     el.innerHTML =
       '<div class="toolbar">'+
         '<select id="mo" style="flex:0 1 210px"><option value="">All time</option>'+
           months.map(function(m){ return '<option value="'+m+'" '+(view.month===m?'selected':'')+'>'+esc(monthName(m))+'</option>'; }).join("")+
-        '</select><div class="grow"></div>'+
+        '</select>'+
+        '<select id="shipf" style="flex:0 1 150px"><option value="">All parcels</option>'+
+          Object.keys(SHIP).map(function(k){
+            return '<option value="'+k+'" '+(view.ship===k?'selected':'')+'>'+SHIP[k]+'</option>';
+          }).join("")+'</select>'+
+        '<div class="grow"></div>'+
         '<button class="btn ghost" id="csv" style="flex:0 0 auto">Download as CSV</button>'+
       '</div>'+
       '<div class="kpis" style="margin-bottom:20px">'+
         kpi("Pieces sold", String(units), view.month?monthName(view.month):"all time")+
         kpi("Money in", inr(rev), "", "", "accent")+
         kpi("Profit", inr(pro), (rev>0?(pro/rev*100).toFixed(0):"0")+"% margin", pro>=0?"pos":"neg", "tint")+
+        kpi("Shipping", inr(shipNet), shipNet<0?"out of your pocket":"covered by customers", shipNet>=0?"pos":"neg")+
+        kpi("Still owed", inr(owed), owedCount+" parcel"+(owedCount===1?"":"s"), owed>0?"neg":"pos")+
       '</div>'+
       '<div class="card scroll"><table class="tbl"><thead><tr>'+
-        '<th>Date</th><th>Design</th><th>Size</th><th class="num">Qty</th>'+
-        '<th class="num">Each</th><th class="num">Total</th><th class="num">Profit</th><th></th>'+
+        '<th>Date</th><th>Design</th><th>Ship to</th><th class="num">Qty</th>'+
+        '<th class="num">Total</th><th class="num">Profit</th><th>Parcel</th><th></th>'+
       '</tr></thead><tbody>'+
       list.map(function(s){
         const p = saleProfit(s);
@@ -1375,18 +1601,27 @@
           '<td class="money" style="font-size:12.5px;color:var(--ink-2)">'+esc(niceDate(s.date))+'</td>'+
           '<td><span class="money" style="font-size:11.5px;color:var(--ink-3)">'+esc(s.itemCode||"")+'</span>'+
             '<div>'+esc(s.itemName||"\u2014")+'</div>'+
-            (s.who?'<div class="muted" style="font-size:12px">'+esc(s.who)+'</div>':'')+'</td>'+
-          '<td class="muted">'+esc(s.variantLabel||"\u2014")+'</td>'+
+            '<div class="muted" style="font-size:12px">'+esc(s.variantLabel||"")+'</div></td>'+
+          '<td>'+(s.custName
+              ? esc(s.custName)+(s.custPhone?'<div class="money" style="font-size:11.5px;color:var(--ink-3)">'+esc(s.custPhone)+'</div>':'')
+              : '<span class="muted">'+esc(s.who||"\u2014")+'</span>')+'</td>'+
           '<td class="num">'+n(s.qty)+'</td>'+
-          '<td class="num">'+inr(s.unitSellINR)+'</td>'+
           '<td class="num">'+inr(n(s.qty)*n(s.unitSellINR))+'</td>'+
           '<td class="num '+(p>=0?'pos':'neg')+'" style="font-weight:600">'+inr(p)+'</td>'+
+          '<td><button class="shipchip '+(s.ship||"pending")+'" data-ship="'+s.id+'">'+esc(SHIP[s.ship||"pending"])+'</button>'+
+            '<div style="margin-top:5px"><button class="paychip '+(s.pay||"unpaid")+'" data-ship="'+s.id+'">'+esc(PAY[s.pay||"unpaid"])+
+              (saleDue(s)>0?' '+inr(saleDue(s)):'')+'</button></div>'+
+            (s.tracking?'<div class="money" style="font-size:11px;color:var(--ink-3);margin-top:4px">'+esc(s.tracking)+'</div>':'')+'</td>'+
           '<td style="text-align:right"><button class="btn ghost sm" data-undo="'+s.id+'">Undo</button></td></tr>';
       }).join("")+
       '</tbody></table></div>';
 
     $("#mo").onchange = function(e){ view.month = e.target.value; renderSales(); };
+    $("#shipf").onchange = function(e){ view.ship = e.target.value; renderSales(); };
     $("#csv").onclick = exportCSV;
+    el.querySelectorAll("[data-ship]").forEach(function(b){
+      b.onclick = function(){ shipModal(S.sales.find(function(x){ return x.id===b.dataset.ship; })); };
+    });
     el.querySelectorAll("[data-undo]").forEach(function(b){
       b.onclick = function(){
         const s = S.sales.find(function(x){ return x.id===b.dataset.undo; });
@@ -1467,11 +1702,15 @@
     setTimeout(function(){ URL.revokeObjectURL(u); }, 1500);
   }
   function exportCSV(){
-    const head = ["Date","Code","Design","Size","Qty","Price each (INR)","Total (INR)","Cost each (THB)","Rate used","Cost total (INR)","Profit (INR)","Sold to"];
+    const head = ["Date","Code","Design","Size","Qty","Price each (INR)","Total (INR)","Cost each (THB)","Rate used","Cost total (INR)","Shipping charged (INR)","Courier cost (INR)","Profit (INR)","Customer","Phone","Address","Status","Courier","Tracking","Payment","Received (INR)","Due (INR)","How paid"];
     const rows = S.sales.slice().sort(function(a,b){ return (a.date||"").localeCompare(b.date||""); }).map(function(s){
       const c = costINR(s.buyTHB, s.rate);
       return [s.date, s.itemCode||"", s.itemName, s.variantLabel, n(s.qty), n(s.unitSellINR), n(s.qty)*n(s.unitSellINR),
-              n(s.buyTHB), n(s.rate), (n(s.qty)*c).toFixed(2), saleProfit(s).toFixed(2), s.who||""];
+              n(s.buyTHB), n(s.rate), (n(s.qty)*c).toFixed(2),
+              n(s.shipCharged), n(s.shipCost), saleProfit(s).toFixed(2),
+              s.custName||s.who||"", s.custPhone||"", (s.custAddr||"").replace(/\n/g,", "),
+              SHIP[s.ship||"pending"], s.courier||"", s.tracking||"",
+              PAY[s.pay||"unpaid"], salePaid(s).toFixed(2), saleDue(s).toFixed(2), s.payMethod||""];
     });
     const csv = [head].concat(rows).map(function(r){
       return r.map(function(c){ return '"'+String(c==null?"":c).replace(/"/g,'""')+'"'; }).join(",");
