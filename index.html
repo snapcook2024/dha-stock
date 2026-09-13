@@ -1,0 +1,1607 @@
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Parisienne&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  :root{
+    /* Pulled from the DHA Label swatch: velvet #06180E, gold thread #D2B174 */
+    --velvet:#06180E;
+    --velvet-2:#143528;
+    --gold:#D2B174;
+    --gold-2:#E2C381;
+
+    --ink:#10271A;
+    --ink-2:#4B5B50;
+    --ink-3:#8C998F;
+    --line:#DCE3DC;
+    --line-2:#EDF1EC;
+    --bg:#F1F4EF;
+    --surface:#FFFFFF;
+
+    --plum:#14452F;        /* primary action */
+    --plum-2:#1B5D3F;
+    --plum-soft:#E5EFE8;
+    --teal:#157048;        /* profit */
+    --teal-soft:#E3EFE8;
+    --marigold:#A5761B;    /* running low */
+    --marigold-soft:#F7EEDA;
+    --madder:#8E3A2E;      /* loss, sold out, danger */
+    --madder-soft:#F8E7E3;
+
+    --r:16px;
+    --lift:0 1px 2px rgba(6,24,14,.06), 0 10px 30px rgba(6,24,14,.09);
+    --lift-2:0 2px 4px rgba(6,24,14,.08), 0 18px 44px rgba(6,24,14,.16);
+
+    --ui:"Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --display:"Cormorant Garamond", Georgia, "Times New Roman", serif;
+    --script:"Parisienne", "Cormorant Garamond", cursive;
+    --mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  body{ margin:0; }
+  .app{
+    font-family:var(--ui);
+    color:var(--ink);
+    background:var(--bg);
+    min-height:100vh;
+    padding-bottom:96px;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{ max-width:1120px; margin:0 auto; padding:0 18px; }
+
+  /* ---------- header: woven cloth ---------- */
+  header.top{
+    background:
+      radial-gradient(130% 100% at 18% -10%, rgba(255,255,255,.075), transparent 62%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.03) 0 1px, transparent 1px 5px),
+      repeating-linear-gradient(0deg, rgba(255,255,255,.022) 0 1px, transparent 1px 5px),
+      var(--velvet);
+    color:#fff;
+    padding:20px 0 19px;
+    border-bottom:1px solid rgba(210,177,116,.34);
+  }
+  .brand{ display:flex; align-items:center; gap:15px; flex-wrap:wrap; }
+  .brand .mark{
+    width:60px; height:60px; border-radius:14px; object-fit:contain; display:block;
+    border:1px solid rgba(210,177,116,.5); box-shadow:0 5px 18px rgba(0,0,0,.4);
+  }
+  .brand h1{
+    font-family:var(--script); font-size:32px; font-weight:400;
+    margin:0; line-height:.95; color:var(--gold-2);
+  }
+  .brand .sub{
+    font-family:var(--mono); font-size:10px; letter-spacing:.19em; text-transform:uppercase;
+    color:#8FA396; margin:8px 0 0;
+  }
+  .rate-pill{
+    margin-left:auto; display:flex; align-items:center; gap:9px;
+    background:rgba(210,177,116,.1); border:1px solid rgba(210,177,116,.34);
+    padding:9px 14px; border-radius:999px; font-family:var(--mono);
+    font-size:12.5px; color:var(--gold-2); cursor:pointer; font-weight:500;
+  }
+  .rate-pill:hover{ background:rgba(210,177,116,.2); }
+  .rate-pill .dot{ width:6px; height:6px; border-radius:50%; background:var(--gold); }
+
+  /* ---------- tabs: segmented ---------- */
+  nav.tabs{ position:sticky; top:0; z-index:30; background:var(--bg); padding:14px 0 6px; }
+  .tabs-inner{ max-width:1120px; margin:0 auto; padding:0 18px; }
+  .seg{
+    display:inline-flex; gap:3px; background:var(--surface); padding:4px;
+    border-radius:999px; border:1px solid var(--line); box-shadow:0 1px 2px rgba(6,24,14,.05);
+    max-width:100%; overflow-x:auto;
+  }
+  .tab{
+    appearance:none; border:0; background:none; cursor:pointer; border-radius:999px;
+    font-family:var(--ui); font-size:13.5px; font-weight:600; color:var(--ink-3);
+    padding:9px 18px; white-space:nowrap; letter-spacing:-.005em;
+  }
+  .tab:hover{ color:var(--ink); }
+  .tab.on{ background:var(--velvet); color:var(--gold-2); }
+
+  section.page{ display:none; padding-top:22px; }
+  section.page.on{ display:block; }
+
+  /* ---------- headings ---------- */
+  h2.sec{
+    font-family:var(--display); font-size:22px; font-weight:600; letter-spacing:-.005em;
+    color:var(--ink); margin:34px 0 14px; display:flex; align-items:baseline; gap:10px;
+  }
+  h2.sec:first-child{ margin-top:0; }
+  h2.sec .cnt{ font-family:var(--mono); font-size:12px; color:var(--ink-3); font-weight:500; }
+
+  .card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--r); }
+  .money{ font-family:var(--mono); font-variant-numeric:tabular-nums; }
+  .muted{ color:var(--ink-3); }
+  .pos{ color:var(--teal); } .neg{ color:var(--madder); }
+
+  /* ---------- controls ---------- */
+  button.btn{
+    appearance:none; font-family:var(--ui); font-size:14px; font-weight:600; letter-spacing:-.005em;
+    padding:11px 17px; border-radius:11px; cursor:pointer; border:1px solid transparent;
+    display:inline-flex; align-items:center; justify-content:center; gap:7px; line-height:1;
+  }
+  .btn.primary{ background:var(--plum); color:#fff; }
+  .btn.primary:hover{ background:var(--plum-2); }
+  .btn.ghost{ background:var(--surface); color:var(--ink); border-color:var(--line); }
+  .btn.ghost:hover{ border-color:var(--ink-3); background:#FAFCF9; }
+  .btn.danger{ background:var(--madder-soft); color:var(--madder); }
+  .btn.danger:hover{ background:#F2DACF; }
+  .btn.sm{ font-size:13px; padding:9px 13px; border-radius:9px; }
+  .btn[disabled]{ opacity:.4; cursor:not-allowed; }
+  .btn:focus-visible, input:focus-visible, select:focus-visible, .tab:focus-visible, .pick button:focus-visible{
+    outline:2.5px solid var(--plum-2); outline-offset:2px;
+  }
+  input[type=text], input[type=number], input[type=date], select{
+    font-family:var(--ui); font-size:15px; color:var(--ink);
+    padding:11px 13px; border:1px solid var(--line); border-radius:11px;
+    background:var(--surface); width:100%;
+  }
+  input[type=number]{ font-family:var(--mono); }
+  input::placeholder{ color:#A9B6AC; }
+  label.fld{ display:block; }
+  label.fld > span{
+    display:block; font-family:var(--mono); font-size:10.5px; font-weight:500; text-transform:uppercase;
+    letter-spacing:.11em; color:var(--ink-3); margin-bottom:7px;
+  }
+  .eyebrow{
+    font-family:var(--mono); font-size:10.5px; font-weight:500; text-transform:uppercase;
+    letter-spacing:.11em; color:var(--ink-3);
+  }
+  .row{ display:flex; gap:11px; flex-wrap:wrap; }
+  .row > *{ flex:1 1 145px; min-width:0; }
+
+  /* ---------- KPI ---------- */
+  .kpis{ display:grid; grid-template-columns:repeat(auto-fit,minmax(172px,1fr)); gap:13px; }
+  .kpi{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--r);
+    padding:17px 18px 16px; position:relative; overflow:hidden;
+  }
+  .kpi .lbl{ font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.11em; color:var(--ink-3); }
+  .kpi .val{ font-family:var(--mono); font-size:25px; font-weight:600; margin-top:11px; letter-spacing:-.03em; line-height:1.05; }
+  .kpi .note{ font-size:12.5px; color:var(--ink-3); margin-top:7px; line-height:1.4; }
+  .kpi.accent{ background:var(--ink); border-color:var(--ink); }
+  .kpi.accent .lbl{ color:#A99FB4; } .kpi.accent .val{ color:#fff; } .kpi.accent .note{ color:#A99FB4; }
+  .kpi.tint{ background:var(--plum-soft); border-color:#CFE0D5; }
+
+  /* ---------- the swing tag ---------- */
+  .grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(232px,1fr)); gap:16px; }
+  .tag{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--r);
+    overflow:hidden; display:flex; flex-direction:column; position:relative;
+  }
+  .tag .shot{
+    aspect-ratio:4/5; background:linear-gradient(160deg,#EFF3EE,#E4EBE4);
+    display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative;
+  }
+  .tag .shot img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .tag .shot svg{ width:46px; height:46px; color:#B7C6BA; }
+  .stockbadge{
+    position:absolute; top:11px; right:11px; z-index:2;
+    font-family:var(--mono); font-size:11px; font-weight:600; padding:5px 9px; border-radius:8px;
+    background:rgba(6,24,14,.84); color:#fff; backdrop-filter:blur(6px);
+  }
+  .stockbadge.low{ background:var(--marigold); }
+  .stockbadge.out{ background:var(--madder); }
+  /* punched hole, like a real swing tag */
+  .tag .hole{
+    position:absolute; top:12px; left:12px; z-index:2; width:15px; height:15px; border-radius:50%;
+    background:var(--bg); box-shadow:inset 0 1px 2px rgba(6,24,14,.24);
+  }
+  .tag .body{ padding:14px 15px 15px; display:flex; flex-direction:column; gap:12px; flex:1; }
+  .tag .nm{ font-family:var(--display); font-size:18px; font-weight:600; letter-spacing:-.01em; line-height:1.25; }
+  .tag .cat{ margin-top:5px; }
+  .priceline{ display:flex; align-items:center; gap:7px; font-family:var(--mono); font-size:13px; }
+  .priceline .buy{ color:var(--ink-3); }
+  .priceline .lead{ flex:1; border-bottom:1px dotted var(--line); height:1px; min-width:8px; }
+  .priceline .sell{ font-weight:600; font-size:14.5px; }
+  .marginchip{
+    display:inline-flex; align-self:flex-start; font-family:var(--mono); font-size:11.5px; font-weight:600;
+    padding:4px 9px; border-radius:7px; background:var(--teal-soft); color:var(--teal);
+  }
+  .marginchip.bad{ background:var(--madder-soft); color:var(--madder); }
+  .sizes{ display:flex; flex-wrap:wrap; gap:6px; padding-top:2px; border-top:1px solid var(--line-2); margin-top:-2px; padding-top:12px; }
+  .sz{
+    font-family:var(--mono); font-size:11.5px; border-radius:7px; padding:4px 5px 4px 8px;
+    display:inline-flex; gap:6px; align-items:center; background:#F3F7F2; color:var(--ink-2);
+  }
+  .sz b{ font-weight:600; color:var(--ink); }
+  .sz .q{
+    background:#fff; border-radius:5px; padding:1px 6px; font-weight:600; color:var(--ink-2);
+    box-shadow:inset 0 0 0 1px var(--line);
+  }
+  .sz.low{ background:var(--marigold-soft); } .sz.low .q{ color:var(--marigold); }
+  .sz.out{ opacity:.45; }
+  .tag .acts{ display:flex; gap:7px; margin-top:auto; }
+  .tag .acts .btn{ flex:1; }
+  .tag .acts .btn.icon{ flex:0 0 auto; padding-left:11px; padding-right:11px; }
+
+  /* ---------- table ---------- */
+  .tbl{ width:100%; border-collapse:collapse; font-size:14px; }
+  .tbl th{
+    text-align:left; font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.1em;
+    color:var(--ink-3); padding:13px 14px; border-bottom:1px solid var(--line); font-weight:500; white-space:nowrap;
+  }
+  .tbl td{ padding:13px 14px; border-bottom:1px solid var(--line-2); vertical-align:middle; }
+  .tbl tr:last-child td{ border-bottom:0; }
+  .tbl tbody tr:hover{ background:#FAFCF9; }
+  .tbl td.num, .tbl th.num{ text-align:right; font-family:var(--mono); font-variant-numeric:tabular-nums; }
+  .scroll{ overflow-x:auto; }
+
+  .toolbar{ display:flex; gap:11px; align-items:center; flex-wrap:wrap; margin-bottom:18px; }
+  .toolbar .grow{ flex:1 1 220px; }
+
+  .empty{ text-align:center; padding:54px 22px; color:var(--ink-3); }
+  .empty h3{ font-family:var(--display); color:var(--ink); font-size:23px; font-weight:600; margin:0 0 8px; }
+  .empty p{ margin:0 auto 18px; font-size:14px; max-width:340px; line-height:1.55; }
+
+  /* ---------- modal ---------- */
+  .veil{
+    position:fixed; inset:0; background:rgba(6,24,14,.6); z-index:100;
+    display:flex; align-items:flex-end; justify-content:center; backdrop-filter:blur(2px);
+  }
+  @media(min-width:640px){ .veil{ align-items:center; padding:26px; } }
+  .modal{
+    background:var(--surface); width:100%; max-width:560px; max-height:92vh; overflow-y:auto;
+    border-radius:20px 20px 0 0; box-shadow:var(--lift-2);
+  }
+  @media(min-width:640px){ .modal{ border-radius:18px; } }
+  .modal .mh{
+    padding:20px 22px 15px; border-bottom:1px solid var(--line-2);
+    display:flex; align-items:center; gap:12px; position:sticky; top:0; background:var(--surface); z-index:2;
+  }
+  .modal .mh h3{ font-family:var(--display); font-size:21px; margin:0; font-weight:600; letter-spacing:-.01em; }
+  .modal .mh .x{ margin-left:auto; border:0; background:none; font-size:25px; line-height:1; color:var(--ink-3); cursor:pointer; padding:0 4px; }
+  .modal .mh .x:hover{ color:var(--ink); }
+  .modal .mb{ padding:20px 22px; display:flex; flex-direction:column; gap:16px; }
+  .modal .mf{ padding:15px 22px 22px; display:flex; gap:11px; }
+  .modal .mf .btn{ flex:1; }
+
+  .vrow{ display:flex; gap:8px; align-items:center; }
+  .vrow input{ flex:1; }
+  .vrow input.q{ max-width:86px; }
+  .vrow .del{ border:0; background:none; color:var(--ink-3); cursor:pointer; font-size:20px; padding:4px 6px; }
+  .vrow .del:hover{ color:var(--madder); }
+
+  .pick{ display:flex; flex-wrap:wrap; gap:8px; }
+  .pick button{
+    font-family:var(--mono); font-size:13px; padding:10px 13px; border-radius:10px;
+    border:1px solid var(--line); background:var(--surface); cursor:pointer; color:var(--ink);
+  }
+  .pick button.on{ border-color:var(--plum); background:var(--plum-soft); color:var(--plum); font-weight:600; }
+  .pick button:disabled{ opacity:.35; cursor:not-allowed; }
+
+  .calc{
+    background:#FAFCF9; border:1px solid var(--line); border-radius:13px; padding:15px 16px;
+    font-family:var(--mono); font-size:13px; display:flex; flex-direction:column; gap:9px;
+  }
+  .calc div{ display:flex; justify-content:space-between; gap:12px; color:var(--ink-2); }
+  .calc .tot{
+    border-top:1px dashed var(--line); padding-top:10px; margin-top:1px;
+    font-weight:600; font-size:15px; color:var(--ink);
+  }
+
+  .drop{
+    border:1.5px dashed var(--line); border-radius:13px; padding:22px; text-align:center;
+    cursor:pointer; color:var(--ink-3); font-size:13.5px; background:#FAFCF9;
+  }
+  .drop:hover{ border-color:var(--plum); color:var(--plum); background:var(--plum-soft); }
+  .photocount{
+    position:absolute; bottom:10px; right:10px; z-index:2; font-family:var(--mono); font-size:11px;
+    padding:4px 8px; border-radius:7px; background:rgba(6,24,14,.72); color:#fff;
+  }
+  .thumbs{
+    display:grid; grid-template-columns:repeat(auto-fill,minmax(84px,1fr)); gap:9px;
+    max-height:330px; overflow-y:auto; padding-right:2px;
+  }
+  .thumb{
+    position:relative; aspect-ratio:1; border-radius:12px; overflow:hidden;
+    border:1px solid var(--line); background:#F3F7F2;
+  }
+  .thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .thumb .rm{
+    position:absolute; top:5px; right:5px; border:0; background:rgba(6,24,14,.82); color:#fff;
+    width:23px; height:23px; border-radius:7px; cursor:pointer; font-size:15px; line-height:1; padding:0;
+  }
+  .thumb .cv{
+    position:absolute; left:5px; bottom:5px; border:0; background:rgba(6,24,14,.82); color:#fff;
+    font-family:var(--ui); font-size:10px; font-weight:600; padding:4px 7px; border-radius:7px; cursor:pointer;
+  }
+  .thumb.is-cover{ border-color:var(--plum); box-shadow:0 0 0 2px var(--plum-soft); }
+  .thumb.is-cover .cv{ background:var(--plum); color:var(--gold-2); cursor:default; }
+  .recov{ display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:11px; max-height:60vh; overflow-y:auto; }
+  .recov .cell{ border:1px solid var(--line); border-radius:12px; overflow:hidden; background:#F3F7F2; }
+  .recov .cell img{ width:100%; aspect-ratio:1; object-fit:cover; display:block; }
+  .recov .cell select{ border:0; border-top:1px solid var(--line); border-radius:0; font-size:12px; padding:8px 6px; }
+  .gal img.big{ width:100%; border-radius:14px; display:block; background:#F3F7F2; }
+  .gal .strip{ display:flex; gap:8px; overflow-x:auto; margin-top:12px; padding-bottom:2px; }
+  .gal .strip img{
+    width:58px; height:58px; object-fit:cover; border-radius:10px; cursor:pointer;
+    border:2px solid transparent; flex:0 0 auto;
+  }
+  .gal .strip img.on{ border-color:var(--plum); }
+  .preview{ position:relative; border-radius:13px; overflow:hidden; border:1px solid var(--line); }
+  .preview img{ width:100%; max-height:230px; object-fit:cover; display:block; }
+  .preview button{
+    position:absolute; top:9px; right:9px; border:0; background:rgba(6,24,14,.86); color:#fff;
+    border-radius:9px; padding:7px 11px; font-size:12.5px; cursor:pointer; font-family:var(--ui); font-weight:600;
+  }
+
+  .toast{
+    position:fixed; left:50%; bottom:26px; transform:translateX(-50%); z-index:200;
+    background:var(--ink); color:#fff; padding:13px 20px; border-radius:12px;
+    font-size:14px; font-weight:500; box-shadow:var(--lift-2); max-width:90vw;
+  }
+  .loading{ text-align:center; padding:70px; color:var(--ink-3); font-size:14px; }
+  .warn{
+    display:none; background:var(--marigold-soft); border:1px solid #E7D3A6; color:#6B4C0E;
+    border-radius:13px; padding:14px 16px; font-size:13.5px; line-height:1.6; margin-top:16px;
+  }
+  .warn.on{ display:block; }
+  .warn b{ font-weight:600; }
+  .status{
+    display:flex; align-items:center; gap:9px; font-family:var(--mono); font-size:12px;
+    color:var(--ink-3); margin-top:14px;
+  }
+  .status .led{ width:8px; height:8px; border-radius:50%; background:var(--teal); flex:0 0 auto; }
+  .status .led.bad{ background:var(--madder); }
+
+  @media (prefers-reduced-motion: no-preference){
+    .tag{ transition:box-shadow .2s ease, transform .2s ease, border-color .2s ease; }
+    .tag:hover{ box-shadow:var(--lift); transform:translateY(-2px); border-color:#C6D3C8; }
+    .kpi, .btn, .tab{ transition:background .16s ease, color .16s ease, border-color .16s ease; }
+    @keyframes rise{ from{ opacity:0; transform:translateY(10px);} to{ opacity:1; transform:none;} }
+    .grid > .tag{ animation:rise .4s cubic-bezier(.2,.7,.3,1) both; }
+    .grid > .tag:nth-child(1){animation-delay:.02s} .grid > .tag:nth-child(2){animation-delay:.05s}
+    .grid > .tag:nth-child(3){animation-delay:.08s} .grid > .tag:nth-child(4){animation-delay:.11s}
+    .grid > .tag:nth-child(5){animation-delay:.14s} .grid > .tag:nth-child(6){animation-delay:.17s}
+    .grid > .tag:nth-child(n+7){animation-delay:.2s}
+    .kpis > .kpi{ animation:rise .35s ease both; }
+    .toast{ animation:rise .25s ease both; }
+    .modal{ animation:rise .22s cubic-bezier(.2,.7,.3,1) both; }
+  }
+  @media(max-width:420px){
+    .grid{ grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; }
+    .tag .body{ padding:12px; gap:10px; }
+    .tag .nm{ font-size:14.5px; }
+    .brand h1{ font-size:22px; }
+  }
+</style>
+
+<div class="app">
+  <header class="top">
+    <div class="wrap brand">
+      <img class="mark" src="data:image/jpeg;base64,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" alt="DHA Label">
+      <div>
+        <h1>DHA Label</h1>
+        <p class="sub">Stock room &middot; Bangkok &rarr; India</p>
+      </div>
+      <button class="rate-pill" id="ratePill" title="Change the exchange rate"><span class="dot"></span><span id="rateTxt">&#3647;1 = &#8377;&mdash;</span></button>
+    </div>
+  </header>
+
+  <nav class="tabs">
+    <div class="tabs-inner">
+      <div class="seg">
+        <button class="tab on" data-tab="dash">Overview</button>
+        <button class="tab" data-tab="inv">Stock</button>
+        <button class="tab" data-tab="sales">Sales</button>
+        <button class="tab" data-tab="set">Settings</button>
+      </div>
+    </div>
+  </nav>
+
+  <div class="wrap">
+    <div id="warn" class="warn"></div>
+    <div id="boot" class="loading">Opening the stock room&hellip;</div>
+    <section class="page" id="p-dash"></section>
+    <section class="page" id="p-inv"></section>
+    <section class="page" id="p-sales"></section>
+    <section class="page" id="p-set"></section>
+  </div>
+</div>
+
+<div id="modalHost"></div>
+<div id="toastHost"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  const DATA_KEY = "cim:data";
+  const IMG_PREFIX = "cim:img:";
+
+  const SCHEMA = 3;   // 1 = single photo, 2 = photo list, 3 = design codes
+  let S = { schema: SCHEMA, rev: 0, rate: 2.60, lowStock: 2, nextCode: 1, lastBackupAt: 0, items: [], sales: [] };
+  let IMG = {};
+  let view = { tab:"dash", q:"", cat:"", month:"" };
+
+  const HANGER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8a2.5 2.5 0 1 1 2.5-2.5"/><path d="M12 8v2.2L3.6 15.7A1.6 1.6 0 0 0 4.5 18.7h15a1.6 1.6 0 0 0 .9-2.9L12 10.2"/></svg>';
+
+  const $ = (s,r)=> (r||document).querySelector(s);
+  const uid = ()=> Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+  const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+  const n = v => { const x = parseFloat(v); return isFinite(x) ? x : 0; };
+  const thb = v => "\u0E3F" + Math.round(n(v)).toLocaleString("en-US");
+  const inr = v => "\u20B9" + Math.round(n(v)).toLocaleString("en-IN");
+  const today = () => new Date().toISOString().slice(0,10);
+  const ym = d => String(d||"").slice(0,7);
+  const monthName = k => { if(!k) return ""; const p=k.split("-"); return new Date(p[0], p[1]-1, 1).toLocaleString("en-US",{month:"long",year:"numeric"}); };
+  const niceDate = d => { if(!d) return "\u2014"; const x=new Date(d+"T00:00:00"); return isNaN(x)?d:x.toLocaleDateString("en-GB",{day:"2-digit",month:"short"}); };
+
+  const costINR = (buyTHB, rate) => n(buyTHB) * n(rate);
+  const unitProfit = it => n(it.sellINR) - costINR(it.buyTHB, S.rate);
+  const marginPct = it => n(it.sellINR) > 0 ? (unitProfit(it) / n(it.sellINR)) * 100 : 0;
+  const stockOf = it => (it.variants||[]).reduce((a,v)=> a + n(v.qty), 0);
+  const saleProfit = s => n(s.qty) * (n(s.unitSellINR) - costINR(s.buyTHB, s.rate));
+  const vlabel = v => [v.size, v.color].filter(Boolean).join(" \u00B7 ") || "Standard";
+  // photos are held as a list of ids on the design; the first one is the cover
+  const MAX_PICS = 24;
+  const photosOf = it => (it.photos||[]).slice();
+
+  /* Only cover photos are held in memory. The rest are fetched when you
+     actually open a design, so a catalogue with 20+ shots each still starts
+     instantly instead of pulling everything in at once. */
+  async function ensurePhotos(it){
+    const missing = photosOf(it).filter(function(id){ return !IMG[id]; });
+    for (let i = 0; i < missing.length; i++){
+      try { const v = await KV.get(IMG_PREFIX + missing[i]); if (v) IMG[missing[i]] = v; } catch(e){}
+    }
+  }
+  async function loadAllPhotos(){
+    try {
+      const keys = await KV.keys(IMG_PREFIX);
+      await Promise.all(keys.map(async function(k){
+        const id = String(k).slice(IMG_PREFIX.length);
+        if (IMG[id]) return;
+        try { const v = await KV.get(k); if (v) IMG[id] = v; } catch(e){}
+      }));
+    } catch(e){}
+  }
+
+  /* ---------- design codes: DHA0001, DHA0002 \u2026 ----------
+     A code is never reused, even after a design is deleted. Old sales still
+     carry the code they were sold under, so reusing a number would quietly
+     attach an old sale to a different garment. */
+  const CODE_PREFIX = "DHA";
+  const fmtCode = num => CODE_PREFIX + String(num).padStart(4, "0");
+  function codeNum(c){
+    const m = /^DHA0*(\d+)$/i.exec(String(c||"").trim());
+    return m ? parseInt(m[1], 10) : null;
+  }
+  function peekNextCode(){
+    let max = 0;
+    S.items.forEach(function(it){ const v = codeNum(it.code); if (v && v > max) max = v; });
+    S.sales.forEach(function(s){ const v = codeNum(s.itemCode); if (v && v > max) max = v; });
+    return Math.max(max + 1, Math.round(n(S.nextCode)) || 1);
+  }
+  function takeCode(){
+    const num = peekNextCode();
+    S.nextCode = num + 1;
+    return fmtCode(num);
+  }
+  function codeTaken(code, exceptId){
+    const c = String(code||"").trim().toUpperCase();
+    return S.items.some(function(it){ return it.id !== exceptId && String(it.code||"").toUpperCase() === c; });
+  }
+
+  function toast(msg){
+    const h = $("#toastHost");
+    h.innerHTML = '<div class="toast">'+esc(msg)+'</div>';
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function(){ h.innerHTML=""; }, 2600);
+  }
+
+  /* ---------- storage ----------
+     Tries three places to save, in order, and uses the first that genuinely
+     works (proved by writing a test value and reading it back):
+       1. the host's own storage slot, when the page is given one
+       2. IndexedDB in the browser  - plenty of room for photos
+       3. localStorage              - smaller, fine for the numbers
+     If none works, the app still runs but says so loudly. */
+  let TIER = null;            // "host" | "idb" | "local" | "memory"
+  let STORAGE_OK = null;
+  let lastSavedAt = 0;
+  let PHOTO_COUNT = 0;
+  let PHOTO_LOSS = null;
+  let STALE = false;       // another tab holds newer data than this page
+  let NEAR_FULL = false;   // localStorage is running out of room
+  const MEM = {};
+
+  function hostReady(){
+    if (window.storage && typeof window.storage.get === "function") return Promise.resolve(true);
+    return new Promise(function(resolve){
+      let tries = 0;
+      const t = setInterval(function(){
+        if (window.storage && typeof window.storage.get === "function"){ clearInterval(t); resolve(true); }
+        else if (++tries > 12){ clearInterval(t); resolve(false); }
+      }, 100);
+    });
+  }
+
+  /* --- IndexedDB, wrapped in promises --- */
+  let _db = null;
+  function idb(){
+    if (_db) return Promise.resolve(_db);
+    return new Promise(function(res, rej){
+      try{
+        if (!window.indexedDB) return rej(new Error("no idb"));
+        const r = window.indexedDB.open("dha-stock-room", 1);
+        r.onupgradeneeded = function(){ r.result.createObjectStore("kv"); };
+        r.onsuccess = function(){ _db = r.result; res(_db); };
+        r.onerror = function(){ rej(r.error || new Error("idb")); };
+        r.onblocked = function(){ rej(new Error("idb blocked")); };
+      } catch(e){ rej(e); }
+    });
+  }
+  function idbDo(mode, fn){
+    return idb().then(function(db){
+      return new Promise(function(res, rej){
+        const tx = db.transaction("kv", mode);
+        const req = fn(tx.objectStore("kv"));
+        req.onsuccess = function(){ res(req.result); };
+        req.onerror = function(){ rej(req.error); };
+      });
+    });
+  }
+
+  /* --- one interface over whichever tier we ended up with --- */
+  const KV = {
+    async get(k){
+      if (TIER === "host"){ const r = await window.storage.get(k); return r && r.value; }
+      if (TIER === "idb")  return await idbDo("readonly", function(st){ return st.get(k); });
+      if (TIER === "local") return window.localStorage.getItem(k);
+      return MEM[k];
+    },
+    async set(k, v){
+      if (TIER === "host"){ await window.storage.set(k, v); return; }
+      if (TIER === "idb"){ await idbDo("readwrite", function(st){ return st.put(v, k); }); return; }
+      if (TIER === "local"){ window.localStorage.setItem(k, v); return; }
+      MEM[k] = v;
+    },
+    async del(k){
+      if (TIER === "host"){ await window.storage.delete(k); return; }
+      if (TIER === "idb"){ await idbDo("readwrite", function(st){ return st.delete(k); }); return; }
+      if (TIER === "local"){ window.localStorage.removeItem(k); return; }
+      delete MEM[k];
+    },
+    async keys(prefix){
+      let all = [];
+      if (TIER === "host"){ const l = await window.storage.list(prefix); all = (l && l.keys) || []; }
+      else if (TIER === "idb"){ all = await idbDo("readonly", function(st){ return st.getAllKeys(); }); }
+      else if (TIER === "local"){ for (let i=0;i<window.localStorage.length;i++) all.push(window.localStorage.key(i)); }
+      else all = Object.keys(MEM);
+      return all.filter(function(k){ return String(k).indexOf(prefix) === 0; });
+    }
+  };
+
+  async function probe(tier){
+    TIER = tier;
+    const k = "cim:probe", v = "ok-" + Date.now();
+    try { await KV.set(k, v); const back = await KV.get(k); await KV.del(k); return back === v; }
+    catch(e){ return false; }
+  }
+
+  async function pickTier(){
+    if (TIER) return TIER;
+    if (await hostReady() && await probe("host")) { STORAGE_OK = true; return TIER = "host"; }
+    if (await probe("idb"))   { STORAGE_OK = true; return TIER = "idb"; }
+    if (await probe("local")) { STORAGE_OK = true; return TIER = "local"; }
+    TIER = "memory"; STORAGE_OK = false; return TIER;
+  }
+
+  const TIER_NAME = { host:"this app", idb:"your browser", local:"your browser", memory:"nowhere" };
+
+  function flagStorage(){
+    const w = document.getElementById("warn");
+    if (!w) return;
+    if (STORAGE_OK === false){
+      w.className = "warn on";
+      w.innerHTML = '<b>This browser is not letting the app save anything.</b><br>'+
+        'You can keep working, but everything is lost the moment you close or refresh. '+
+        'Download the backup below now, and for daily use save this page to your phone or computer '+
+        '(browser menu &rarr; Download / Save page) and open it from there \u2014 saving works normally then.'+
+        '<div style="margin-top:12px"><button class="btn ghost sm" id="warn-dl">Download backup now</button></div>';
+      const b = document.getElementById("warn-dl");
+      if (b) b.onclick = downloadBackup;
+    } else if (STALE){
+      w.className = "warn on";
+      w.innerHTML = '<b>This page is out of date.</b><br>'+
+        'Another tab or window has saved newer data, so this one has stopped writing to avoid erasing it. '+
+        'Nothing has been lost. Refresh this page to catch up, and close the other copies \u2014 keep only one open.'+
+        '<div style="margin-top:12px"><button class="btn ghost sm" id="warn-reload">Refresh now</button></div>';
+      const rl = document.getElementById("warn-reload");
+      if (rl) rl.onclick = function(){ location.reload(); };
+    } else if (NEAR_FULL){
+      w.className = "warn on";
+      w.innerHTML = '<b>Storage is nearly full.</b><br>'+
+        'This browser only gives about 5 MB to a page opened from a file on disk, and you are close to it. '+
+        'New sales and photos may stop saving. Download a backup, then move the app to a web address where there is far more room.'+
+        '<div style="margin-top:12px"><button class="btn ghost sm" id="warn-dl2">Download backup</button></div>';
+      const d2 = document.getElementById("warn-dl2");
+      if (d2) d2.onclick = downloadBackup;
+    } else if (PHOTO_LOSS){
+      w.className = "warn on";
+      w.innerHTML = '<b>'+PHOTO_LOSS.count+' photo'+(PHOTO_LOSS.count>1?'s':'')+' did not survive being saved.</b><br>'+
+        'The designs themselves are fine \u2014 only the pictures are missing, on: '+
+        esc(PHOTO_LOSS.who.slice(0,8).join(", "))+(PHOTO_LOSS.who.length>8?' and more':'')+'. '+
+        'Add them again a few at a time rather than all at once, and check Settings to see how many are stored.'+
+        '<div style="margin-top:12px;display:flex;gap:9px;flex-wrap:wrap">'+
+          '<button class="btn ghost sm" id="warn-rec">Try to recover them</button>'+
+          '<button class="btn ghost sm" id="warn-ok">Got it</button></div>';
+      const rc = document.getElementById("warn-rec");
+      if (rc) rc.onclick = recoverModal;
+      const ok = document.getElementById("warn-ok");
+      if (ok) ok.onclick = function(){ PHOTO_LOSS = null; flagStorage(); };
+    } else {
+      w.className = "warn"; w.innerHTML = "";
+    }
+  }
+
+  async function load(){
+    await pickTier();
+    try {
+      const v = await KV.get(DATA_KEY);
+      if (v){
+        const d = JSON.parse(v);
+        S = Object.assign(S, d);
+        S.items = S.items || []; S.sales = S.sales || [];
+        S.rate = n(S.rate) || 1;
+        S.lowStock = Math.max(0, Math.round(n(S.lowStock)));
+      }
+    } catch(e){}
+    S.schema = SCHEMA;   // shape is repaired by the checks below, not by this number
+
+    // designs saved before multi-photo kept their one photo under the design id
+    let backfilled = false;
+    for (let i = 0; i < S.items.length; i++){
+      const it = S.items[i];
+      if (!Array.isArray(it.photos)){
+        it.photos = [];
+        try { const v = await KV.get(IMG_PREFIX + it.id); if (v){ IMG[it.id] = v; it.photos = [it.id]; } } catch(e){}
+        backfilled = true;
+      }
+    }
+
+    // Audit before loading anything: a photo the design points at may not have
+    // survived. Better to know and say so than to show a blank frame.
+    try {
+      const have = new Set((await KV.keys(IMG_PREFIX)).map(function(k){ return String(k).slice(IMG_PREFIX.length); }));
+      PHOTO_COUNT = have.size;
+      let lost = 0; const who = [];
+      S.items.forEach(function(it){
+        const all = it.photos || [];
+        const keep = all.filter(function(id){ return have.has(id); });
+        if (keep.length !== all.length){
+          lost += all.length - keep.length;
+          who.push(it.code || it.name);
+          it.photos = keep;
+          backfilled = true;
+        }
+      });
+      PHOTO_LOSS = lost ? { count: lost, who: who } : null;
+    } catch(e){}
+
+    // covers only - the rest load when a design is opened
+    try {
+      const covers = S.items.map(function(i){ return (i.photos||[])[0]; })
+        .filter(function(id){ return id && !IMG[id]; });
+      await Promise.all(covers.map(async function(id){
+        try { const v = await KV.get(IMG_PREFIX + id); if (v) IMG[id] = v; } catch(e){}
+      }));
+    } catch(e){}
+
+    // designs added before codes existed get one now, oldest first
+    S.items.slice().sort(function(a,b){ return (a.createdAt||0)-(b.createdAt||0); })
+      .forEach(function(it){ if (!it.code){ it.code = takeCode(); backfilled = true; } });
+    if (backfilled) save();
+
+    flagStorage();
+  }
+
+  let chain = Promise.resolve();
+  function save(){
+    chain = chain.then(writeNow, writeNow);
+    return chain;
+  }
+  async function writeNow(){
+    await pickTier();
+    if (TIER === "memory"){ STORAGE_OK = false; flagStorage(); return false; }
+
+    /* Every save bumps a revision number. Before writing, check what is already
+       stored: if it is newer than what this page is holding, this page is a
+       stale tab and must not write - otherwise it silently erases whatever the
+       other tab did. Refusing to write is always recoverable; overwriting is not. */
+    try {
+      const current = await KV.get(DATA_KEY);
+      if (current){
+        let cur = null;
+        try { cur = JSON.parse(current); } catch(e){}
+        if (cur && n(cur.rev) > n(S.rev)){
+          STALE = true; flagStorage(); return false;
+        }
+      }
+    } catch(e){}
+
+    S.rev = (n(S.rev) || 0) + 1;
+    const payload = JSON.stringify(S);
+    NEAR_FULL = (TIER === "local" && payload.length > 3200000);
+    for (let attempt = 0; attempt < 2; attempt++){
+      try {
+        await KV.set(DATA_KEY, payload);
+        const back = await KV.get(DATA_KEY);        // prove it landed
+        if (back === payload){
+          STORAGE_OK = true; lastSavedAt = Date.now(); flagStorage(); return true;
+        }
+      } catch(e){}
+      await new Promise(function(r){ setTimeout(r, 250); });
+    }
+    STORAGE_OK = false; flagStorage(); return false;
+  }
+
+  // Returns true only when the photo is provably on disk. Same discipline as
+  // the main save: write, read back, compare, retry, and never claim success.
+  async function saveImg(id, dataUrl){
+    await pickTier();
+    if (TIER === "memory"){
+      if (dataUrl) IMG[id] = dataUrl; else delete IMG[id];
+      return false;
+    }
+    const key = IMG_PREFIX + id;
+    for (let attempt = 0; attempt < 3; attempt++){
+      try {
+        if (!dataUrl){ await KV.del(key); delete IMG[id]; return true; }
+        await KV.set(key, dataUrl);
+        const back = await KV.get(key);
+        if (back === dataUrl){ IMG[id] = dataUrl; return true; }
+      } catch(e){}
+      await new Promise(function(r){ setTimeout(r, 250 + attempt*500); });
+    }
+    return false;
+  }
+
+  /* ---------- image shrink: keeps photos inside the storage limit ---------- */
+  function shrink(file){
+    return new Promise(function(res, rej){
+      const fr = new FileReader();
+      fr.onerror = function(){ rej(new Error("read")); };
+      fr.onload = function(){
+        const img = new Image();
+        img.onerror = function(){ rej(new Error("decode")); };
+        img.onload = function(){
+          const MAX = 640;
+          let w = img.width, h = img.height;
+          if (w > MAX || h > MAX){ const s = MAX/Math.max(w,h); w = Math.round(w*s); h = Math.round(h*s); }
+          const c = document.createElement("canvas");
+          c.width = w; c.height = h;
+          const ctx = c.getContext("2d");
+          ctx.fillStyle = "#fff"; ctx.fillRect(0,0,w,h);
+          ctx.drawImage(img, 0, 0, w, h);
+          res(c.toDataURL("image/jpeg", 0.72));
+        };
+        img.src = fr.result;
+      };
+      fr.readAsDataURL(file);
+    });
+  }
+
+  /* ---------- modal ---------- */
+  function modal(title, bodyHTML, footHTML){
+    const host = $("#modalHost");
+    host.innerHTML =
+      '<div class="veil"><div class="modal" role="dialog" aria-modal="true">'+
+        '<div class="mh"><h3>'+esc(title)+'</h3><button class="x" aria-label="Close">&times;</button></div>'+
+        '<div class="mb">'+bodyHTML+'</div>'+
+        '<div class="mf">'+(footHTML||"")+'</div>'+
+      '</div></div>';
+    const veil = $(".veil", host);
+    veil.addEventListener("mousedown", function(e){ if(e.target===veil) closeModal(); });
+    $(".x", host).addEventListener("click", closeModal);
+    document.addEventListener("keydown", escClose);
+    return host;
+  }
+  function escClose(e){ if(e.key==="Escape") closeModal(); }
+  function closeModal(){ $("#modalHost").innerHTML=""; document.removeEventListener("keydown", escClose); }
+  function ask(title, msg, okLabel, onOk){
+    modal(title, '<p style="margin:0;font-size:14.5px;line-height:1.6;color:var(--ink-2)">'+esc(msg)+'</p>',
+      '<button class="btn ghost" id="aNo">Cancel</button><button class="btn danger" id="aYes">'+esc(okLabel)+'</button>');
+    $("#aNo").onclick = closeModal;
+    $("#aYes").onclick = function(){ closeModal(); onOk(); };
+  }
+
+  /* ---------- shell ---------- */
+  function render(){
+    $("#boot").style.display = "none";
+    $("#rateTxt").textContent = "\u0E3F1 = \u20B9" + n(S.rate).toFixed(2);
+    document.querySelectorAll(".tab").forEach(function(t){ t.classList.toggle("on", t.dataset.tab===view.tab); });
+    document.querySelectorAll(".page").forEach(function(p){ p.classList.toggle("on", p.id==="p-"+view.tab); });
+    if (view.tab==="dash") renderDash();
+    if (view.tab==="inv") renderInv();
+    if (view.tab==="sales") renderSales();
+    if (view.tab==="set") renderSet();
+  }
+  function kpi(lbl,val,note,cls,box){
+    return '<div class="kpi '+(box||"")+'"><div class="lbl">'+esc(lbl)+'</div>'+
+      '<div class="val '+(cls||"")+'">'+esc(val)+'</div>'+
+      '<div class="note">'+esc(note||"")+'</div></div>';
+  }
+
+  /* ---------- overview ---------- */
+  function renderDash(){
+    const el = $("#p-dash");
+    if (!S.items.length){
+      el.innerHTML = '<div class="card empty"><h3>The rail is empty</h3>'+
+        '<p>Add your first design with its photo, Baht cost and Rupee price. Every number on this page fills itself in from there.</p>'+
+        '<button class="btn primary" id="d-add">Add a design</button></div>';
+      $("#d-add").onclick = function(){ view.tab="inv"; render(); itemModal(null); };
+      return;
+    }
+
+    let units=0, costTHB=0, retailINR=0;
+    S.items.forEach(function(it){
+      const q = stockOf(it);
+      units += q; costTHB += q*n(it.buyTHB); retailINR += q*n(it.sellINR);
+    });
+    const lockedINR = costTHB * n(S.rate);
+    const potential = retailINR - lockedINR;
+
+    const thisMonth = ym(today());
+    const mSales = S.sales.filter(function(s){ return ym(s.date)===thisMonth; });
+    const mRev = mSales.reduce(function(a,s){ return a + n(s.qty)*n(s.unitSellINR); }, 0);
+    const mProfit = mSales.reduce(function(a,s){ return a + saleProfit(s); }, 0);
+    const mUnits = mSales.reduce(function(a,s){ return a + n(s.qty); }, 0);
+    const allRev = S.sales.reduce(function(a,s){ return a + n(s.qty)*n(s.unitSellINR); }, 0);
+    const allProfit = S.sales.reduce(function(a,s){ return a + saleProfit(s); }, 0);
+
+    const low = [];
+    S.items.forEach(function(it){ (it.variants||[]).forEach(function(v){
+      if (n(v.qty) <= n(S.lowStock)) low.push({it:it, v:v});
+    });});
+
+    const bs = {};
+    S.sales.forEach(function(s){
+      const it = S.items.find(function(i){ return i.id===s.itemId; });
+      const nm = it ? it.name : (s.itemName || "Removed design");
+      if(!bs[nm]) bs[nm] = {units:0, profit:0};
+      bs[nm].units += n(s.qty); bs[nm].profit += saleProfit(s);
+    });
+    const top = Object.entries(bs).sort(function(a,b){ return b[1].units-a[1].units; }).slice(0,5);
+
+    el.innerHTML =
+      '<h2 class="sec">Money sitting in stock</h2>'+
+      '<div class="kpis">'+
+        kpi("On the rail", String(units)+" pcs", S.items.length+" designs")+
+        kpi("Paid out", thb(costTHB), "= "+inr(lockedINR)+" at today\u2019s rate")+
+        kpi("Worth if it all sells", inr(retailINR), "at your listed prices")+
+        kpi("Profit waiting", inr(potential), "not earned until it sells", potential>=0?"pos":"neg", "tint")+
+      '</div>'+
+
+      '<h2 class="sec">'+esc(monthName(thisMonth))+'</h2>'+
+      '<div class="kpis">'+
+        kpi("Money in", inr(mRev), mUnits+" pieces sold", "", "accent")+
+        kpi("Profit earned", inr(mProfit), (mRev>0?(mProfit/mRev*100).toFixed(0):"0")+"% margin", mProfit>=0?"pos":"neg")+
+        kpi("All-time sales", inr(allRev), S.sales.length+" entries")+
+        kpi("All-time profit", inr(allProfit), "after cost of goods", allProfit>=0?"pos":"neg")+
+      '</div>'+
+
+      (low.length ?
+        '<h2 class="sec">Running low <span class="cnt">'+low.length+'</span></h2>'+
+        '<div class="card scroll"><table class="tbl"><thead><tr>'+
+        '<th>Design</th><th>Size</th><th class="num">Left</th><th></th></tr></thead><tbody>'+
+        low.slice(0,12).map(function(r){
+          return '<tr><td><span class="money" style="font-size:11.5px;color:var(--ink-3)">'+esc(r.it.code||"")+'</span>'+
+          '<div>'+esc(r.it.name)+'</div></td><td class="muted">'+esc(vlabel(r.v))+'</td>'+
+          '<td class="num '+(n(r.v.qty)<=0?'neg':'')+'">'+n(r.v.qty)+'</td>'+
+          '<td style="text-align:right"><button class="btn ghost sm" data-restock="'+r.it.id+'">Add stock</button></td></tr>';
+        }).join("")+'</tbody></table></div>' : "")+
+
+      (top.length ?
+        '<h2 class="sec">Best sellers</h2>'+
+        '<div class="card scroll"><table class="tbl"><thead><tr>'+
+        '<th>Design</th><th class="num">Sold</th><th class="num">Profit</th></tr></thead><tbody>'+
+        top.map(function(e){
+          return '<tr><td>'+esc(e[0])+'</td><td class="num">'+e[1].units+'</td>'+
+          '<td class="num '+(e[1].profit>=0?'pos':'neg')+'">'+inr(e[1].profit)+'</td></tr>';
+        }).join("")+'</tbody></table></div>' : "");
+
+    el.querySelectorAll("[data-restock]").forEach(function(b){
+      b.onclick = function(){ stockModal(S.items.find(function(i){ return i.id===b.dataset.restock; })); };
+    });
+  }
+
+  /* ---------- stock ---------- */
+  function renderInv(){
+    const el = $("#p-inv");
+    const cats = [...new Set(S.items.map(function(i){ return i.category; }).filter(Boolean))].sort();
+
+    let html =
+      '<div class="toolbar">'+
+        '<div class="grow"><input type="text" id="q" placeholder="Search designs\u2026" value="'+esc(view.q)+'"></div>'+
+        (cats.length ? '<select id="cat" style="flex:0 1 170px"><option value="">All categories</option>'+
+          cats.map(function(c){ return '<option '+(view.cat===c?'selected':'')+'>'+esc(c)+'</option>'; }).join("")+'</select>' : '')+
+        '<button class="btn primary" id="add" style="flex:0 0 auto">+ Add design</button>'+
+      '</div>';
+
+    let list = S.items.slice();
+    if (view.q){
+      const q = view.q.toLowerCase();
+      list = list.filter(function(i){ return ((i.code||"")+" "+i.name+" "+(i.category||"")+" "+(i.notes||"")).toLowerCase().indexOf(q)>=0; });
+    }
+    if (view.cat) list = list.filter(function(i){ return i.category===view.cat; });
+    list.sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
+
+    if (!S.items.length){
+      html += '<div class="card empty"><h3>Nothing hanging up yet</h3>'+
+        '<p>Add a design once \u2014 photo, cost in Baht, price in Rupees, and a row for each size you carry.</p>'+
+        '<button class="btn primary" id="add2">Add a design</button></div>';
+    } else if (!list.length){
+      html += '<div class="card empty"><h3>Nothing matches</h3><p>Try a different word, or clear the category filter.</p></div>';
+    } else {
+      html += '<div class="grid">' + list.map(cardHTML).join("") + '</div>';
+    }
+    el.innerHTML = html;
+
+    const qi = $("#q", el);
+    if (qi) qi.oninput = function(e){
+      view.q = e.target.value; renderInv();
+      const f = $("#q", el); f.focus(); f.setSelectionRange(f.value.length, f.value.length);
+    };
+    const ci = $("#cat", el); if (ci) ci.onchange = function(e){ view.cat = e.target.value; renderInv(); };
+    const a1 = $("#add", el); if (a1) a1.onclick = function(){ itemModal(null); };
+    const a2 = $("#add2", el); if (a2) a2.onclick = function(){ itemModal(null); };
+
+    el.querySelectorAll("[data-gal]").forEach(function(b){ b.onclick = function(){ galleryModal(byId(b.dataset.gal)); }; });
+    el.querySelectorAll("[data-sell]").forEach(function(b){ b.onclick = function(){ sellModal(byId(b.dataset.sell)); }; });
+    el.querySelectorAll("[data-edit]").forEach(function(b){ b.onclick = function(){ itemModal(byId(b.dataset.edit)); }; });
+    el.querySelectorAll("[data-stock]").forEach(function(b){ b.onclick = function(){ stockModal(byId(b.dataset.stock)); }; });
+  }
+  function byId(id){ return S.items.find(function(i){ return i.id===id; }); }
+
+  function cardHTML(it){
+    const q = stockOf(it);
+    const m = marginPct(it);
+    const up = unitProfit(it);
+    const pics = photosOf(it);
+    const img = pics.length ? IMG[pics[0]] : null;
+    const badge = q<=0 ? '<span class="stockbadge out">Sold out</span>'
+                : (q<=n(S.lowStock) ? '<span class="stockbadge low">'+q+' left</span>'
+                : '<span class="stockbadge">'+q+' in stock</span>');
+    return '<article class="tag">'+
+      '<div class="shot" '+(pics.length?'data-gal="'+it.id+'" title="View photos"':'')+'><span class="hole"></span>'+badge+
+        (img ? '<img src="'+img+'" alt="'+esc(it.name)+'">' : HANGER)+
+        (pics.length > 1 ? '<span class="photocount">'+pics.length+' photos</span>' : '')+
+      '</div>'+
+      '<div class="body">'+
+        '<div>'+
+          '<div class="nm">'+esc(it.name)+'</div>'+
+          '<div class="cat eyebrow">'+esc(it.code||"\u2014")+(it.category ? ' \u00B7 '+esc(it.category) : '')+'</div>'+
+        '</div>'+
+        '<div>'+
+          '<div class="priceline">'+
+            '<span class="buy">'+thb(it.buyTHB)+'</span>'+
+            '<span class="lead"></span>'+
+            '<span class="sell">'+inr(it.sellINR)+'</span>'+
+          '</div>'+
+          '<div style="margin-top:8px"><span class="marginchip '+(up<0?'bad':'')+'">'+(up>=0?'+':'')+inr(up)+' each \u00B7 '+m.toFixed(0)+'%</span></div>'+
+        '</div>'+
+        '<div class="sizes">'+
+          ((it.variants||[]).map(function(v){
+            const qq = n(v.qty);
+            const cls = qq<=0 ? "out" : (qq<=n(S.lowStock) ? "low" : "");
+            return '<span class="sz '+cls+'"><b>'+esc(vlabel(v))+'</b><span class="q">'+qq+'</span></span>';
+          }).join("") || '<span class="muted" style="font-size:12.5px">No sizes set</span>')+
+        '</div>'+
+        '<div class="acts">'+
+          '<button class="btn primary sm" data-sell="'+it.id+'" '+(q<=0?'disabled':'')+'>Sell</button>'+
+          '<button class="btn ghost sm" data-stock="'+it.id+'">Stock</button>'+
+          '<button class="btn ghost sm icon" data-edit="'+it.id+'" title="Edit design" aria-label="Edit design">\u270E</button>'+
+        '</div>'+
+      '</div></article>';
+  }
+
+  /* ---------- photo recovery ----------
+     Photos live under their own keys. If a design lost its reference to one,
+     the photo is still on disk as an orphan - this finds those and lets you
+     reattach them without uploading anything again. */
+  async function recoverModal(){
+    modal("Recover photos", '<p style="margin:0;color:var(--ink-2);font-size:14px">Scanning storage\u2026</p>', '');
+    await loadAllPhotos();
+    const referenced = new Set();
+    S.items.forEach(function(it){ (it.photos||[]).forEach(function(id){ referenced.add(id); }); });
+    const stored = Object.keys(IMG);
+    const orphans = stored.filter(function(id){ return !referenced.has(id); });
+    PHOTO_COUNT = stored.length;
+
+    const opts = S.items.slice().sort(function(a,b){ return String(a.code||"").localeCompare(String(b.code||"")); })
+      .map(function(it){ return '<option value="'+it.id+'">'+esc((it.code?it.code+" ":"")+it.name)+'</option>'; }).join("");
+
+    const summary =
+      '<div class="calc"><div><span>Photos found in storage</span><span>'+stored.length+'</span></div>'+
+      '<div><span>Already attached to a design</span><span>'+(stored.length-orphans.length)+'</span></div>'+
+      '<div class="tot"><span>Loose, waiting to be attached</span><span>'+orphans.length+'</span></div></div>';
+
+    modal("Recover photos",
+      summary +
+      (orphans.length
+        ? '<p style="margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.6">Pick the design each photo belongs to. It attaches straight away \u2014 no need to upload anything again.</p>'+
+          '<div class="recov" id="recov">'+orphans.map(function(id){
+            return '<div class="cell" data-id="'+id+'"><img src="'+IMG[id]+'" alt="">'+
+              '<select data-for="'+id+'"><option value="">Attach to\u2026</option>'+opts+'</select></div>';
+          }).join("")+'</div>'
+        : '<p style="margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.6">Nothing loose was found. Every photo still in storage is already attached to a design, which means the missing ones were never written to disk and cannot be brought back \u2014 they will have to be added again. If you downloaded a backup earlier, restoring it is the faster route.</p>'),
+      '<button class="btn ghost" id="rc-close">Close</button>');
+
+    const grid = document.getElementById("recov");
+    if (grid) grid.querySelectorAll("select").forEach(function(sel){
+      sel.onchange = async function(){
+        const it = byId(sel.value);
+        if (!it) return;
+        it.photos = it.photos || [];
+        if (it.photos.indexOf(sel.dataset.for) < 0) it.photos.push(sel.dataset.for);
+        await save();
+        toast("Attached to "+(it.code||it.name));
+        const cell = sel.closest(".cell");
+        if (cell) cell.remove();
+        render();
+      };
+    });
+    $("#rc-close").onclick = function(){ closeModal(); render(); };
+  }
+
+  /* ---------- photo viewer ---------- */
+  async function galleryModal(it){
+    if (!it || !photosOf(it).length) return;
+    await ensurePhotos(it);
+    const list = photosOf(it).filter(function(id){ return IMG[id]; });
+    if (!list.length) return;
+    modal(it.name,
+      '<div class="gal"><img class="big" id="g-big" src="'+IMG[list[0]]+'" alt="'+esc(it.name)+'">'+
+      (list.length > 1 ? '<div class="strip" id="g-strip">'+list.map(function(id,k){
+        return '<img src="'+IMG[id]+'" data-k="'+k+'" class="'+(k===0?'on':'')+'" alt="">';
+      }).join("")+'</div>' : '')+'</div>',
+      '<button class="btn ghost" id="g-close">Close</button>');
+    const strip = document.getElementById("g-strip");
+    if (strip) strip.querySelectorAll("img").forEach(function(t){
+      t.onclick = function(){
+        document.getElementById("g-big").src = IMG[list[+t.dataset.k]];
+        strip.querySelectorAll("img").forEach(function(x){ x.classList.toggle("on", x===t); });
+      };
+    });
+    $("#g-close").onclick = closeModal;
+  }
+
+  /* ---------- add / edit design ---------- */
+  async function itemModal(it){
+    const isNew = !it;
+    if (it) await ensurePhotos(it);
+    const d = it || { id:uid(), name:"", category:"", buyTHB:"", sellINR:"", notes:"", variants:[], createdAt:Date.now() };
+    let vars = (d.variants||[]).map(function(v){ return {id:v.id||uid(), size:v.size||"", color:v.color||"", qty:n(v.qty)}; });
+    if (!vars.length) vars = [{id:uid(), size:"", color:"", qty:0}];
+    let pics = photosOf(d).map(function(id){ return {id:id, data:IMG[id]}; })
+      .filter(function(p){ return p.data; });
+    const picsBefore = photosOf(d);
+
+    modal(isNew ? "Add design" : "Edit design",
+      '<div id="picBox"></div>'+
+      '<div class="row">'+
+        '<label class="fld" style="flex:0 0 130px"><span>Code</span>'+
+          '<input type="text" id="f-code" value="'+esc(d.code || (isNew ? fmtCode(peekNextCode()) : ""))+'"></label>'+
+        '<label class="fld" style="flex:1 1 200px"><span>Design name</span>'+
+          '<input type="text" id="f-name" value="'+esc(d.name)+'" placeholder="e.g. Floral cotton kurti"></label>'+
+      '</div>'+
+      '<label class="fld"><span>Category</span><input type="text" id="f-cat" value="'+esc(d.category)+'" placeholder="e.g. Kurti, Dress, Top" list="catlist">'+
+        '<datalist id="catlist">'+[...new Set(S.items.map(function(i){return i.category;}).filter(Boolean))].map(function(c){ return '<option value="'+esc(c)+'">'; }).join("")+'</datalist></label>'+
+      '<div class="row">'+
+        '<label class="fld"><span>Buying price (\u0E3F)</span><input type="number" id="f-buy" min="0" step="0.01" value="'+esc(d.buyTHB)+'" placeholder="0"></label>'+
+        '<label class="fld"><span>Selling price (\u20B9)</span><input type="number" id="f-sell" min="0" step="0.01" value="'+esc(d.sellINR)+'" placeholder="0"></label>'+
+      '</div>'+
+      '<div class="calc" id="f-calc"></div>'+
+      '<div><span class="eyebrow" style="display:block;margin-bottom:9px">Sizes &amp; quantity</span>'+
+        '<div id="vlist" style="display:flex;flex-direction:column;gap:8px"></div>'+
+        '<div class="row" style="margin-top:10px">'+
+          '<button class="btn ghost sm" id="v-add" style="flex:0 0 auto">+ Add a size</button>'+
+          '<button class="btn ghost sm" id="v-std" style="flex:0 0 auto">Fill S M L XL</button>'+
+        '</div></div>'+
+      '<label class="fld"><span>Notes</span><input type="text" id="f-notes" value="'+esc(d.notes||"")+'" placeholder="Supplier, fabric, anything"></label>'+
+      (isNew ? '' : '<button class="btn danger" id="f-del" style="align-self:flex-start">Delete this design</button>'),
+      '<button class="btn ghost" id="f-cancel">Cancel</button><button class="btn primary" id="f-save">'+(isNew?'Add design':'Save changes')+'</button>'
+    );
+
+    function drawPics(){
+      const box = $("#picBox");
+      box.innerHTML =
+        (pics.length ? '<div class="thumbs" id="thumbs">'+pics.map(function(p,i){
+            return '<div class="thumb '+(i===0?'is-cover':'')+'">'+
+              '<img src="'+p.data+'" alt="">'+
+              '<button class="rm" data-rm="'+i+'" aria-label="Remove photo">&times;</button>'+
+              (i===0 ? '<span class="cv">Cover</span>' : '<button class="cv" data-cv="'+i+'">Make cover</button>')+
+            '</div>';
+          }).join("")+'</div>' : '')+
+        '<div class="drop" id="pic-drop" style="margin-top:'+(pics.length?'10px':'0')+'">'+
+          (pics.length ? 'Add more photos' : 'Tap to add design photos')+
+          ' &middot; '+pics.length+'/'+MAX_PICS+
+          '<input type="file" accept="image/*" multiple id="pic-in" hidden></div>';
+
+      box.querySelectorAll("[data-rm]").forEach(function(b){
+        b.onclick = function(){ pics.splice(+b.dataset.rm, 1); drawPics(); };
+      });
+      box.querySelectorAll("[data-cv]").forEach(function(b){
+        b.onclick = function(){
+          const i = +b.dataset.cv;
+          pics.unshift(pics.splice(i,1)[0]);   // chosen photo moves to the front
+          drawPics();
+        };
+      });
+      const dz = $("#pic-drop"), inp = $("#pic-in");
+      dz.onclick = function(e){ if (e.target === inp) return; inp.click(); };
+      inp.onchange = async function(e){
+        const files = Array.prototype.slice.call(e.target.files || []);
+        e.target.value = "";
+        if (!files.length) return;
+        const room = MAX_PICS - pics.length;
+        if (room <= 0){ toast("That's the limit of "+MAX_PICS+" photos"); return; }
+        const use = files.slice(0, room);
+        if (files.length > room) toast("Only "+MAX_PICS+" photos per design \u2014 added the first "+room);
+        for (let i = 0; i < use.length; i++){
+          dz.firstChild.nodeValue = "Shrinking photo "+(i+1)+" of "+use.length+"\u2026";
+          try { pics.push({ id: uid(), data: await shrink(use[i]) }); }
+          catch(err){ toast("One file wouldn't open \u2014 try a JPG or PNG"); }
+        }
+        drawPics();
+      };
+    }
+
+    function drawVars(){
+      const box = $("#vlist");
+      box.innerHTML = vars.map(function(v,i){
+        return '<div class="vrow" data-i="'+i+'">'+
+          '<input type="text" class="s" placeholder="Size" value="'+esc(v.size)+'">'+
+          '<input type="text" class="c" placeholder="Colour" value="'+esc(v.color)+'">'+
+          '<input type="number" class="q" min="0" step="1" placeholder="Qty" value="'+n(v.qty)+'">'+
+          '<button class="del" title="Remove" aria-label="Remove size">&times;</button></div>';
+      }).join("");
+      box.querySelectorAll(".vrow").forEach(function(row){
+        const i = +row.dataset.i;
+        $(".s",row).oninput = function(e){ vars[i].size = e.target.value; };
+        $(".c",row).oninput = function(e){ vars[i].color = e.target.value; };
+        $(".q",row).oninput = function(e){ vars[i].qty = n(e.target.value); };
+        $(".del",row).onclick = function(){
+          vars.splice(i,1);
+          if(!vars.length) vars=[{id:uid(),size:"",color:"",qty:0}];
+          drawVars();
+        };
+      });
+    }
+    function drawCalc(){
+      const b = n($("#f-buy").value), s = n($("#f-sell").value);
+      const c = b*n(S.rate), p = s-c, m = s>0 ? p/s*100 : 0;
+      $("#f-calc").innerHTML =
+        '<div><span>Cost in rupees</span><span>'+thb(b)+' \u00D7 '+n(S.rate).toFixed(2)+' = '+inr(c)+'</span></div>'+
+        '<div><span>Selling price</span><span>'+inr(s)+'</span></div>'+
+        '<div class="tot"><span>Profit per piece</span><span class="'+(p>=0?'pos':'neg')+'">'+(p>=0?'+':'')+inr(p)+' \u00B7 '+m.toFixed(0)+'%</span></div>';
+    }
+    drawPics(); drawVars(); drawCalc();
+    $("#f-buy").oninput = drawCalc;
+    $("#f-sell").oninput = drawCalc;
+    $("#v-add").onclick = function(){ vars.push({id:uid(),size:"",color:"",qty:0}); drawVars(); };
+    $("#v-std").onclick = function(){
+      const have = new Set(vars.map(function(v){ return v.size.toUpperCase(); }));
+      ["S","M","L","XL"].forEach(function(s){ if(!have.has(s)) vars.push({id:uid(),size:s,color:"",qty:0}); });
+      vars = vars.filter(function(v){ return v.size||v.color||n(v.qty)>0; });
+      drawVars();
+    };
+    $("#f-cancel").onclick = closeModal;
+    if (!isNew) $("#f-del").onclick = function(){
+      ask("Delete design?", "\u201C"+d.name+"\u201D and its stock will be removed. Sales already recorded stay in your history.", "Delete", async function(){
+        S.items = S.items.filter(function(i){ return i.id!==d.id; });
+        const gone = photosOf(d);
+        for (let i=0;i<gone.length;i++){ await saveImg(gone[i], null); }
+        await save(); render(); toast("Design deleted");
+      });
+    };
+    $("#f-save").onclick = async function(){
+      const name = $("#f-name").value.trim();
+      if (!name){ toast("Give the design a name first"); $("#f-name").focus(); return; }
+      let code = $("#f-code").value.trim().toUpperCase();
+      if (!code) code = takeCode();
+      else if (codeTaken(code, d.id)){ toast(code+" is already used by another design"); $("#f-code").focus(); return; }
+      else if (isNew && codeNum(code) === peekNextCode()) S.nextCode = peekNextCode() + 1;
+      const clean = vars.filter(function(v){ return v.size || v.color || n(v.qty)>0; })
+        .map(function(v){ return {id:v.id, size:v.size.trim(), color:v.color.trim(), qty:Math.max(0, Math.round(n(v.qty)))}; });
+      const rec = {
+        id:d.id, code:code, name:name, category:$("#f-cat").value.trim(),
+        buyTHB:n($("#f-buy").value), sellINR:n($("#f-sell").value),
+        notes:$("#f-notes").value.trim(),
+        variants: clean.length ? clean : [{id:uid(), size:"", color:"", qty:0}],
+        photos: [],
+        createdAt: d.createdAt || Date.now()
+      };
+      const idx = S.items.findIndex(function(i){ return i.id===d.id; });
+      if (idx>=0) S.items[idx] = rec; else S.items.push(rec);
+      // write photos one at a time and keep only the ones that provably landed
+      let lostNow = 0;
+      for (let i = 0; i < pics.length; i++){
+        if (IMG[pics[i].id]){ rec.photos.push(pics[i].id); continue; }
+        const ok = await saveImg(pics[i].id, pics[i].data);
+        if (ok) rec.photos.push(pics[i].id); else lostNow++;
+      }
+      for (let i = 0; i < picsBefore.length; i++){
+        if (rec.photos.indexOf(picsBefore[i]) < 0 && pics.every(function(p){ return p.id !== picsBefore[i]; })){
+          await saveImg(picsBefore[i], null);
+        }
+      }
+      PHOTO_COUNT = Object.keys(IMG).length;
+      await save(); closeModal(); render();
+      if (lostNow) toast(lostNow+" photo"+(lostNow>1?"s":"")+" would not save \u2014 add them again, fewer at a time");
+      else toast(isNew ? "Design added" : "Changes saved");
+    };
+  }
+
+  /* ---------- record a sale ---------- */
+  function sellModal(it){
+    if (!it) return;
+    const avail = (it.variants||[]).filter(function(v){ return n(v.qty)>0; });
+    if (!avail.length){ toast("Nothing left in stock for this design"); return; }
+    let vid = avail[0].id;
+
+    modal("Sell \u00B7 "+it.name,
+      '<div><span class="eyebrow" style="display:block;margin-bottom:9px">Which size</span>'+
+        '<div class="pick" id="s-pick">'+ (it.variants||[]).map(function(v){
+          return '<button data-v="'+v.id+'" '+(n(v.qty)<=0?'disabled':'')+' class="'+(v.id===vid?'on':'')+'">'+
+            esc(vlabel(v))+' <span style="opacity:.55">'+n(v.qty)+'</span></button>';
+        }).join("") +'</div></div>'+
+      '<div class="row">'+
+        '<label class="fld"><span>Quantity</span><input type="number" id="s-qty" min="1" step="1" value="1"></label>'+
+        '<label class="fld"><span>Price each (\u20B9)</span><input type="number" id="s-price" min="0" step="0.01" value="'+n(it.sellINR)+'"></label>'+
+      '</div>'+
+      '<div class="row">'+
+        '<label class="fld"><span>Date</span><input type="date" id="s-date" value="'+today()+'"></label>'+
+        '<label class="fld"><span>Sold to / where</span><input type="text" id="s-who" placeholder="Optional"></label>'+
+      '</div>'+
+      '<div class="calc" id="s-calc"></div>',
+      '<button class="btn ghost" id="s-cancel">Cancel</button><button class="btn primary" id="s-ok">Record sale</button>'
+    );
+
+    function cur(){ return (it.variants||[]).find(function(v){ return v.id===vid; }); }
+    function calc(){
+      const q = Math.max(1, Math.round(n($("#s-qty").value)));
+      const p = n($("#s-price").value);
+      const c = costINR(it.buyTHB, S.rate);
+      const rev = q*p, cost = q*c, pr = rev-cost;
+      const left = n(cur().qty) - q;
+      $("#s-calc").innerHTML =
+        '<div><span>Money in</span><span>'+q+' \u00D7 '+inr(p)+' = '+inr(rev)+'</span></div>'+
+        '<div><span>Cost of goods</span><span>'+q+' \u00D7 '+inr(c)+' = '+inr(cost)+'</span></div>'+
+        '<div class="tot"><span>Profit</span><span class="'+(pr>=0?'pos':'neg')+'">'+(pr>=0?'+':'')+inr(pr)+'</span></div>'+
+        '<div style="font-size:12px"><span>Stock left after this</span><span class="'+(left<0?'neg':'')+'">'+left+'</span></div>';
+    }
+    $("#s-pick").querySelectorAll("button").forEach(function(b){
+      b.onclick = function(){
+        vid = b.dataset.v;
+        $("#s-pick").querySelectorAll("button").forEach(function(x){ x.classList.toggle("on", x.dataset.v===vid); });
+        calc();
+      };
+    });
+    $("#s-qty").oninput = calc; $("#s-price").oninput = calc;
+    calc();
+    $("#s-cancel").onclick = closeModal;
+    $("#s-ok").onclick = async function(){
+      const v = cur();
+      const q = Math.round(n($("#s-qty").value));
+      if (q < 1){ toast("Quantity must be at least 1"); return; }
+      if (q > n(v.qty)){ toast("Only "+n(v.qty)+" left in that size"); return; }
+      v.qty = n(v.qty) - q;
+      S.sales.push({
+        id: uid(), itemId: it.id, itemCode: it.code, itemName: it.name, variantId: v.id, variantLabel: vlabel(v),
+        qty: q, unitSellINR: n($("#s-price").value),
+        buyTHB: n(it.buyTHB),
+        rate: n(S.rate),
+        date: $("#s-date").value || today(),
+        who: $("#s-who").value.trim()
+      });
+      const ok = await save(); closeModal(); render();
+      toast(ok ? "Sale recorded" : "NOT SAVED \u2014 read the warning at the top of the page");
+    };
+  }
+
+  /* ---------- add stock ---------- */
+  function stockModal(it){
+    if (!it) return;
+    let vid = (it.variants||[])[0] && it.variants[0].id;
+    modal("Add stock \u00B7 "+it.name,
+      '<div><span class="eyebrow" style="display:block;margin-bottom:9px">Which size</span>'+
+        '<div class="pick" id="k-pick">'+ (it.variants||[]).map(function(v){
+          return '<button data-v="'+v.id+'" class="'+(v.id===vid?'on':'')+'">'+esc(vlabel(v))+
+            ' <span style="opacity:.55">'+n(v.qty)+'</span></button>';
+        }).join("") +'</div></div>'+
+      '<div class="row">'+
+        '<label class="fld"><span>Pieces received</span><input type="number" id="k-qty" min="1" step="1" value="1"></label>'+
+        '<label class="fld"><span>New buying price (\u0E3F)</span><input type="number" id="k-buy" min="0" step="0.01" value="'+n(it.buyTHB)+'"></label>'+
+      '</div>'+
+      '<p style="margin:0;font-size:12.5px;color:var(--ink-3);line-height:1.55">Changing the buying price affects this design from now on. Sales already recorded keep the cost they were sold at.</p>',
+      '<button class="btn ghost" id="k-cancel">Cancel</button><button class="btn primary" id="k-ok">Add stock</button>'
+    );
+    $("#k-pick").querySelectorAll("button").forEach(function(b){
+      b.onclick = function(){
+        vid = b.dataset.v;
+        $("#k-pick").querySelectorAll("button").forEach(function(x){ x.classList.toggle("on", x.dataset.v===vid); });
+      };
+    });
+    $("#k-cancel").onclick = closeModal;
+    $("#k-ok").onclick = async function(){
+      const v = (it.variants||[]).find(function(x){ return x.id===vid; });
+      const q = Math.round(n($("#k-qty").value));
+      if (!v || q<1){ toast("Enter how many pieces you received"); return; }
+      v.qty = n(v.qty) + q;
+      it.buyTHB = n($("#k-buy").value);
+      const ok = await save(); closeModal(); render();
+      toast(ok ? q+" added to "+vlabel(v) : "NOT SAVED \u2014 read the warning at the top");
+    };
+  }
+
+  /* ---------- sales ---------- */
+  function renderSales(){
+    const el = $("#p-sales");
+    if (!S.sales.length){
+      el.innerHTML = '<div class="card empty"><h3>No sales recorded</h3>'+
+        '<p>Open a design under Stock and press Sell. The stock drops and the profit is worked out for you.</p>'+
+        '<button class="btn primary" id="s-go">Go to stock</button></div>';
+      $("#s-go").onclick = function(){ view.tab="inv"; render(); };
+      return;
+    }
+    const months = [...new Set(S.sales.map(function(s){ return ym(s.date); }))].sort().reverse();
+    let list = S.sales.slice().sort(function(a,b){ return (b.date||"").localeCompare(a.date||"") || (b.id>a.id?1:-1); });
+    if (view.month) list = list.filter(function(s){ return ym(s.date)===view.month; });
+
+    const rev = list.reduce(function(a,s){ return a + n(s.qty)*n(s.unitSellINR); }, 0);
+    const pro = list.reduce(function(a,s){ return a + saleProfit(s); }, 0);
+    const units = list.reduce(function(a,s){ return a + n(s.qty); }, 0);
+
+    el.innerHTML =
+      '<div class="toolbar">'+
+        '<select id="mo" style="flex:0 1 210px"><option value="">All time</option>'+
+          months.map(function(m){ return '<option value="'+m+'" '+(view.month===m?'selected':'')+'>'+esc(monthName(m))+'</option>'; }).join("")+
+        '</select><div class="grow"></div>'+
+        '<button class="btn ghost" id="csv" style="flex:0 0 auto">Download as CSV</button>'+
+      '</div>'+
+      '<div class="kpis" style="margin-bottom:20px">'+
+        kpi("Pieces sold", String(units), view.month?monthName(view.month):"all time")+
+        kpi("Money in", inr(rev), "", "", "accent")+
+        kpi("Profit", inr(pro), (rev>0?(pro/rev*100).toFixed(0):"0")+"% margin", pro>=0?"pos":"neg", "tint")+
+      '</div>'+
+      '<div class="card scroll"><table class="tbl"><thead><tr>'+
+        '<th>Date</th><th>Design</th><th>Size</th><th class="num">Qty</th>'+
+        '<th class="num">Each</th><th class="num">Total</th><th class="num">Profit</th><th></th>'+
+      '</tr></thead><tbody>'+
+      list.map(function(s){
+        const p = saleProfit(s);
+        return '<tr>'+
+          '<td class="money" style="font-size:12.5px;color:var(--ink-2)">'+esc(niceDate(s.date))+'</td>'+
+          '<td><span class="money" style="font-size:11.5px;color:var(--ink-3)">'+esc(s.itemCode||"")+'</span>'+
+            '<div>'+esc(s.itemName||"\u2014")+'</div>'+
+            (s.who?'<div class="muted" style="font-size:12px">'+esc(s.who)+'</div>':'')+'</td>'+
+          '<td class="muted">'+esc(s.variantLabel||"\u2014")+'</td>'+
+          '<td class="num">'+n(s.qty)+'</td>'+
+          '<td class="num">'+inr(s.unitSellINR)+'</td>'+
+          '<td class="num">'+inr(n(s.qty)*n(s.unitSellINR))+'</td>'+
+          '<td class="num '+(p>=0?'pos':'neg')+'" style="font-weight:600">'+inr(p)+'</td>'+
+          '<td style="text-align:right"><button class="btn ghost sm" data-undo="'+s.id+'">Undo</button></td></tr>';
+      }).join("")+
+      '</tbody></table></div>';
+
+    $("#mo").onchange = function(e){ view.month = e.target.value; renderSales(); };
+    $("#csv").onclick = exportCSV;
+    el.querySelectorAll("[data-undo]").forEach(function(b){
+      b.onclick = function(){
+        const s = S.sales.find(function(x){ return x.id===b.dataset.undo; });
+        ask("Undo this sale?", "The pieces go back into stock and the profit is removed from your totals.", "Undo sale", async function(){
+          const it = byId(s.itemId);
+          if (it){ const v = (it.variants||[]).find(function(x){ return x.id===s.variantId; }); if (v) v.qty = n(v.qty) + n(s.qty); }
+          S.sales = S.sales.filter(function(x){ return x.id!==s.id; });
+          const ok = await save(); render();
+          toast(ok ? "Sale undone, stock restored" : "NOT SAVED \u2014 read the warning at the top");
+        });
+      };
+    });
+  }
+
+  /* Merge brings in anything this copy is missing and leaves what you already
+     have untouched. Designs are matched on their code, sales on their id, so
+     nothing is duplicated and nothing already here is overwritten. */
+  async function mergeBackup(parsed){
+    const inItems = (parsed.data && parsed.data.items) || [];
+    const inSales = (parsed.data && parsed.data.sales) || [];
+    const imgs = parsed.images || {};
+
+    const byCode = {}, byIdMap = {};
+    S.items.forEach(function(it){ if (it.code) byCode[String(it.code).toUpperCase()] = it; byIdMap[it.id] = it; });
+
+    let addedItems = 0, addedSales = 0, addedPics = 0;
+
+    for (let i = 0; i < inItems.length; i++){
+      const src = inItems[i];
+      const match = (src.code && byCode[String(src.code).toUpperCase()]) || byIdMap[src.id];
+      if (match){
+        // design already here: only fill in photos it is missing
+        const have = match.photos || (match.photos = []);
+        const list = src.photos || [];
+        for (let k = 0; k < list.length; k++){
+          if (have.indexOf(list[k]) < 0 && imgs[list[k]]){
+            if (await saveImg(list[k], imgs[list[k]])){ have.push(list[k]); addedPics++; }
+          }
+        }
+      } else {
+        const copy = JSON.parse(JSON.stringify(src));
+        if (byIdMap[copy.id]) copy.id = uid();
+        copy.photos = [];
+        const list = src.photos || [];
+        for (let k = 0; k < list.length; k++){
+          if (imgs[list[k]] && await saveImg(list[k], imgs[list[k]])){ copy.photos.push(list[k]); addedPics++; }
+        }
+        S.items.push(copy);
+        if (copy.code) byCode[String(copy.code).toUpperCase()] = copy;
+        byIdMap[copy.id] = copy;
+        addedItems++;
+      }
+    }
+
+    const saleIds = new Set(S.sales.map(function(x){ return x.id; }));
+    inSales.forEach(function(x){ if (!saleIds.has(x.id)){ S.sales.push(x); addedSales++; } });
+
+    S.nextCode = Math.max(Math.round(n(S.nextCode))||1, Math.round(n(parsed.data && parsed.data.nextCode))||1, peekNextCode());
+    await save();
+    render();
+    toast("Added "+addedItems+" designs, "+addedSales+" sales, "+addedPics+" photos");
+  }
+
+  async function downloadBackup(){
+    toast("Gathering photos\u2026");
+    await loadAllPhotos();
+    S.lastBackupAt = Date.now();
+    dl("inventory-backup-"+today()+".json", JSON.stringify({data:S, images:IMG}, null, 2), "application/json");
+    save();
+    toast("Backup downloaded");
+  }
+
+  function dl(name, text, type){
+    const b = new Blob([text], {type:type||"text/plain"});
+    const u = URL.createObjectURL(b);
+    const a = document.createElement("a");
+    a.href = u; a.download = name; a.click();
+    setTimeout(function(){ URL.revokeObjectURL(u); }, 1500);
+  }
+  function exportCSV(){
+    const head = ["Date","Code","Design","Size","Qty","Price each (INR)","Total (INR)","Cost each (THB)","Rate used","Cost total (INR)","Profit (INR)","Sold to"];
+    const rows = S.sales.slice().sort(function(a,b){ return (a.date||"").localeCompare(b.date||""); }).map(function(s){
+      const c = costINR(s.buyTHB, s.rate);
+      return [s.date, s.itemCode||"", s.itemName, s.variantLabel, n(s.qty), n(s.unitSellINR), n(s.qty)*n(s.unitSellINR),
+              n(s.buyTHB), n(s.rate), (n(s.qty)*c).toFixed(2), saleProfit(s).toFixed(2), s.who||""];
+    });
+    const csv = [head].concat(rows).map(function(r){
+      return r.map(function(c){ return '"'+String(c==null?"":c).replace(/"/g,'""')+'"'; }).join(",");
+    }).join("\n");
+    dl("sales-"+today()+".csv", csv, "text/csv");
+    toast("CSV downloaded");
+  }
+
+  /* ---------- settings ---------- */
+  function renderSet(){
+    const el = $("#p-set");
+    el.innerHTML =
+      '<div class="card" style="padding:20px">'+
+        '<h3 style="font-family:var(--display);margin:0 0 8px;font-size:21px;font-weight:600">Exchange rate</h3>'+
+        '<p style="margin:0 0 16px;font-size:13.5px;color:var(--ink-2);line-height:1.65">You buy in Baht and sell in Rupees, so every profit figure here depends on this one number. Use the rate you actually get after transfer charges, not the headline bank rate \u2014 otherwise your profit will read higher than it really is.</p>'+
+        '<div class="row"><label class="fld"><span>1 Thai Baht = ? Indian Rupees</span>'+
+          '<input type="number" id="st-rate" step="0.01" min="0" value="'+n(S.rate)+'"></label>'+
+          '<label class="fld"><span>Warn me when stock drops to</span>'+
+          '<input type="number" id="st-low" step="1" min="0" value="'+n(S.lowStock)+'"></label>'+
+          '<label class="fld"><span>Next design code</span>'+
+          '<input type="text" id="st-code" value="'+esc(fmtCode(peekNextCode()))+'"></label></div>'+
+        '<p style="margin:12px 0 0;font-size:12.5px;color:var(--ink-3);line-height:1.55">Codes are given out automatically and never reused. Change this only if your printed tags already start from a different number.</p>'+
+        '<button class="btn primary sm" id="st-save" style="margin-top:16px">Save settings</button>'+
+        '<div class="status"><span class="led '+(STORAGE_OK===false?'bad':'')+'"></span>'+
+          (STORAGE_OK===false ? 'Not saving \u2014 nothing will survive a refresh'
+            : 'Saving to '+(TIER_NAME[TIER]||'this device')+' \u00B7 '+PHOTO_COUNT+' photos stored'+
+              (lastSavedAt?' \u00B7 last save '+new Date(lastSavedAt).toLocaleTimeString("en-GB",{hour:"2-digit",minute:"2-digit"}):''))+
+        '</div>'+
+      '</div>'+
+      '<h2 class="sec">Backup</h2>'+
+      '<div class="card" style="padding:20px">'+
+        (function(){
+          const days = S.lastBackupAt ? Math.floor((Date.now()-S.lastBackupAt)/86400000) : null;
+          const stale = days === null || days >= 7;
+          return '<p style="margin:0 0 14px;font-size:13.5px;line-height:1.6;color:'+(stale?'var(--marigold)':'var(--teal)')+'"><b>'+
+            (days === null ? 'You have never downloaded a backup.'
+             : days === 0 ? 'Last backup: today.'
+             : 'Last backup: '+days+' day'+(days>1?'s':'')+' ago.')+'</b>'+
+            (stale ? ' Do one now \u2014 it takes a few seconds.' : '')+'</p>';
+        })()+
+        '<p style="margin:0 0 16px;font-size:13.5px;color:var(--ink-2);line-height:1.65">Your data lives inside this app. Download a backup now and then, especially before big changes \u2014 the file holds your designs, photos and full sales history.</p>'+
+        '<div class="row">'+
+          '<button class="btn ghost" id="st-exp" style="flex:0 0 auto">Download backup</button>'+
+          '<button class="btn ghost" id="st-imp" style="flex:0 0 auto">Restore from backup</button>'+
+          '<button class="btn ghost" id="st-rec" style="flex:0 0 auto">Recover photos</button>'+
+          '<input type="file" id="st-file" accept="application/json" hidden></div>'+
+      '</div>'+
+      '<h2 class="sec">Danger zone</h2>'+
+      '<div class="card" style="padding:20px">'+
+        '<p style="margin:0 0 16px;font-size:13.5px;color:var(--ink-2)">Clears every design, photo and sale. There is no undo.</p>'+
+        '<button class="btn danger" id="st-wipe">Erase everything</button>'+
+      '</div>';
+
+    $("#st-save").onclick = async function(){
+      const r = n($("#st-rate").value);
+      if (r <= 0){ toast("Enter a rate greater than zero"); $("#st-rate").focus(); return; }
+      S.rate = r;
+      S.lowStock = Math.max(0, Math.round(n($("#st-low").value)));
+      const wanted = codeNum($("#st-code").value);
+      if (wanted === null){ toast("A code looks like DHA0001"); $("#st-code").focus(); return; }
+      S.nextCode = wanted;
+      const ok = await save();
+      render();
+      toast(ok ? "Settings saved" : "Couldn't save \u2014 read the warning at the top");
+    };
+    $("#st-exp").onclick = downloadBackup;
+    $("#st-rec").onclick = recoverModal;
+    $("#st-imp").onclick = function(){ $("#st-file").click(); };
+    $("#st-file").onchange = function(e){
+      const f = e.target.files[0]; if(!f) return;
+      const fr = new FileReader();
+      fr.onload = function(){
+        let parsed;
+        try { parsed = JSON.parse(fr.result); } catch(err){ toast("That file isn't a valid backup"); return; }
+        if (!parsed || !parsed.data || !Array.isArray(parsed.data.items)){ toast("That file isn't a valid backup"); return; }
+        const nItems = (parsed.data.items||[]).length, nSales = (parsed.data.sales||[]).length;
+        const tooBig = (TIER === "local" && fr.result.length > 4000000);
+        modal("Backup file loaded",
+          '<div class="calc"><div><span>Designs in the file</span><span>'+nItems+'</span></div>'+
+          '<div><span>Sales in the file</span><span>'+nSales+'</span></div>'+
+          '<div><span>Photos in the file</span><span>'+Object.keys(parsed.images||{}).length+'</span></div>'+
+          '<div class="tot"><span>Designs here now</span><span>'+S.items.length+'</span></div></div>'+
+          (tooBig ? '<p style="margin:0;padding:12px 14px;background:var(--marigold-soft);border:1px solid #E7D3A6;border-radius:12px;font-size:13.5px;color:#6B4C0E;line-height:1.6"><b>This file is too large for this browser\u2019s storage here.</b> Opened from a file on disk you get about 5 MB. Restoring will fail part way. Put the app on a web address first, then restore there.</p>' : '')+
+          '<p style="margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.65"><b>Merge</b> keeps everything you have and adds only what is missing \u2014 use this to get photos or designs back. '+
+          '<b>Replace</b> throws away what is here and uses the file instead.</p>',
+          '<button class="btn primary" id="r-merge">Merge</button>'+
+          '<button class="btn danger" id="r-replace">Replace</button>');
+        document.getElementById("r-merge").onclick = async function(){
+          closeModal(); toast("Merging\u2026"); await mergeBackup(parsed);
+        };
+        document.getElementById("r-replace").onclick = function(){
+          closeModal();
+          ask("Replace everything?", "Everything currently in the app will be thrown away and replaced by the file.", "Replace", async function(){
+          S = Object.assign({rate:2.6, lowStock:2, items:[], sales:[]}, parsed.data);
+          const imgs = parsed.images || {};
+          IMG = {};
+          await save();
+          const ids = Object.keys(imgs);
+          for (let i=0;i<ids.length;i++){ await saveImg(ids[i], imgs[ids[i]]); }
+            render(); toast("Backup restored");
+          });
+        };
+      };
+      fr.readAsText(f);
+      e.target.value = "";
+    };
+    $("#st-wipe").onclick = function(){
+      ask("Erase everything?", "All designs, photos and sales will be permanently deleted.", "Erase everything", async function(){
+        await loadAllPhotos();
+        const ids = Object.keys(IMG);
+        for (let i=0;i<ids.length;i++){ await saveImg(ids[i], null); }
+        S = { rate:S.rate, lowStock:S.lowStock, items:[], sales:[] };
+        await save(); view.q=""; view.cat=""; view.month=""; render(); toast("Everything erased");
+      });
+    };
+  }
+
+  /* ---------- boot ---------- */
+  document.querySelectorAll(".tab").forEach(function(t){
+    t.onclick = function(){ view.tab = t.dataset.tab; render(); window.scrollTo({top:0, behavior:"smooth"}); };
+  });
+  $("#ratePill").onclick = function(){
+    view.tab="set"; render();
+    const i = $("#st-rate"); if(i){ i.focus(); i.select(); }
+  };
+  /* There used to be a write here that fired when the page closed. It wrote
+     whatever the page was holding, unverified, which is exactly how a stale
+     tab wipes a newer one. Every change already saves and verifies on the
+     spot, so the close-handler was all risk and no benefit. Removed. */
+
+  load().then(render).catch(function(){ render(); });
+})();
+</script>
