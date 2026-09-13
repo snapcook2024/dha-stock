@@ -396,6 +396,7 @@
         <button class="tab on" data-tab="dash">Overview</button>
         <button class="tab" data-tab="inv">Stock</button>
         <button class="tab" data-tab="sales">Sales</button>
+        <button class="tab" data-tab="cust">Customers</button>
         <button class="tab" data-tab="set">Settings</button>
       </div>
     </div>
@@ -407,6 +408,7 @@
     <section class="page" id="p-dash"></section>
     <section class="page" id="p-inv"></section>
     <section class="page" id="p-sales"></section>
+    <section class="page" id="p-cust"></section>
     <section class="page" id="p-set"></section>
   </div>
 </div>
@@ -424,7 +426,7 @@
   const SCHEMA = 3;   // 1 = single photo, 2 = photo list, 3 = design codes
   let S = { schema: SCHEMA, rev: 0, rate: 2.60, lowStock: 2, nextCode: 1, lastBackupAt: 0, items: [], sales: [], customers: [] };
   let IMG = {};
-  let view = { tab:"dash", q:"", cat:"", month:"", ship:"" };
+  let view = { tab:"dash", q:"", cat:"", month:"", ship:"", cq:"" };
 
   const HANGER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8a2.5 2.5 0 1 1 2.5-2.5"/><path d="M12 8v2.2L3.6 15.7A1.6 1.6 0 0 0 4.5 18.7h15a1.6 1.6 0 0 0 .9-2.9L12 10.2"/></svg>';
 
@@ -864,6 +866,7 @@
     if (view.tab==="dash") renderDash();
     if (view.tab==="inv") renderInv();
     if (view.tab==="sales") renderSales();
+    if (view.tab==="cust") renderCust();
     if (view.tab==="set") renderSet();
   }
   function kpi(lbl,val,note,cls,box){
@@ -1060,6 +1063,157 @@
           '<button class="btn ghost sm icon" data-edit="'+it.id+'" title="Edit design" aria-label="Edit design">\u270E</button>'+
         '</div>'+
       '</div></article>';
+  }
+
+  /* ---------- customers ---------- */
+  function custStats(id){
+    const mine = S.sales.filter(function(x){ return x.customerId === id; });
+    return {
+      orders: mine.length,
+      pieces: mine.reduce(function(a,x){ return a + n(x.qty); }, 0),
+      spent:  mine.reduce(function(a,x){ return a + saleGross(x); }, 0),
+      owed:   mine.reduce(function(a,x){ return a + saleDue(x); }, 0),
+      last:   mine.map(function(x){ return x.date || ""; }).sort().pop() || "",
+      sales:  mine.sort(function(a,b){ return (b.date||"").localeCompare(a.date||""); })
+    };
+  }
+
+  function renderCust(){
+    const el = $("#p-cust");
+    if (!S.customers.length){
+      el.innerHTML = '<div class="card empty"><h3>No customers yet</h3>'+
+        '<p>Customers are added when you record a sale and choose <b>+ New customer</b>. '+
+        'Their address is kept here so the next order fills itself in.</p>'+
+        '<button class="btn primary" id="cu-go">Go to stock</button></div>';
+      $("#cu-go").onclick = function(){ view.tab="inv"; render(); };
+      return;
+    }
+    let list = S.customers.slice();
+    if (view.cq){
+      const q = view.cq.toLowerCase();
+      list = list.filter(function(c){
+        return ((c.name||"")+" "+(c.phone||"")+" "+(c.city||"")+" "+(c.pincode||"")).toLowerCase().indexOf(q) >= 0;
+      });
+    }
+    const rows = list.map(function(c){ return { c:c, st:custStats(c.id) }; })
+      .sort(function(a,b){ return (b.st.last||"").localeCompare(a.st.last||""); });
+
+    const totalOwed = rows.reduce(function(a,r){ return a + r.st.owed; }, 0);
+
+    el.innerHTML =
+      '<div class="toolbar">'+
+        '<div class="grow"><input type="text" id="cq" placeholder="Search name, phone, city, PIN\u2026" value="'+esc(view.cq||"")+'"></div>'+
+        '<button class="btn ghost" id="cu-csv" style="flex:0 0 auto">Download as CSV</button>'+
+      '</div>'+
+      '<div class="kpis" style="margin-bottom:20px">'+
+        kpi("Customers", String(S.customers.length), "")+
+        kpi("Repeat buyers", String(rows.filter(function(r){ return r.st.orders > 1; }).length), "ordered more than once")+
+        kpi("Owed by customers", inr(totalOwed), "", totalOwed>0?"neg":"pos", "tint")+
+      '</div>'+
+      '<div class="card scroll"><table class="tbl"><thead><tr>'+
+        '<th>Customer</th><th>Where</th><th class="num">Orders</th>'+
+        '<th class="num">Spent</th><th class="num">Owed</th><th>Last</th><th></th>'+
+      '</tr></thead><tbody>'+
+      (rows.length ? rows.map(function(r){
+        return '<tr><td>'+esc(r.c.name||"\u2014")+
+            (r.c.phone?'<div class="money" style="font-size:11.5px;color:var(--ink-3)">'+esc(r.c.phone)+'</div>':'')+'</td>'+
+          '<td class="muted" style="font-size:13px">'+esc([r.c.city, r.c.state].filter(Boolean).join(", ") || "\u2014")+
+            (r.c.pincode?'<div class="money" style="font-size:11.5px">'+esc(r.c.pincode)+'</div>':'')+'</td>'+
+          '<td class="num">'+r.st.orders+'</td>'+
+          '<td class="num">'+inr(r.st.spent)+'</td>'+
+          '<td class="num '+(r.st.owed>0?'neg':'')+'">'+(r.st.owed>0?inr(r.st.owed):"\u2014")+'</td>'+
+          '<td class="money" style="font-size:12.5px;color:var(--ink-2)">'+esc(niceDate(r.st.last))+'</td>'+
+          '<td style="text-align:right"><button class="btn ghost sm" data-cust="'+r.c.id+'">Open</button></td></tr>';
+      }).join("") : '<tr><td colspan="7" class="muted" style="text-align:center;padding:30px">No matches</td></tr>')+
+      '</tbody></table></div>';
+
+    const q = $("#cq", el);
+    q.oninput = function(e){
+      view.cq = e.target.value; renderCust();
+      const f = $("#cq", el); f.focus(); f.setSelectionRange(f.value.length, f.value.length);
+    };
+    $("#cu-csv").onclick = exportCustomersCSV;
+    el.querySelectorAll("[data-cust]").forEach(function(b){
+      b.onclick = function(){ custModal(custById(b.dataset.cust)); };
+    });
+  }
+
+  function custModal(c){
+    if (!c) return;
+    const st = custStats(c.id);
+    modal(c.name || "Customer",
+      '<div class="calc"><div><span>Orders</span><span>'+st.orders+' \u00B7 '+st.pieces+' pieces</span></div>'+
+        '<div><span>Spent with you</span><span>'+inr(st.spent)+'</span></div>'+
+        '<div class="tot"><span>Still owed</span><span class="'+(st.owed>0?'neg':'pos')+'">'+inr(st.owed)+'</span></div></div>'+
+      '<div class="row">'+
+        '<label class="fld"><span>Name</span><input type="text" id="u-name" value="'+esc(c.name||"")+'"></label>'+
+        '<label class="fld"><span>Phone</span><input type="text" id="u-phone" value="'+esc(c.phone||"")+'"></label>'+
+      '</div>'+
+      '<label class="fld"><span>Address</span><input type="text" id="u-addr" value="'+esc(c.address||"")+'"></label>'+
+      '<div class="row">'+
+        '<label class="fld"><span>City</span><input type="text" id="u-city" value="'+esc(c.city||"")+'"></label>'+
+        '<label class="fld"><span>State</span><input type="text" id="u-state" value="'+esc(c.state||"")+'"></label>'+
+        '<label class="fld" style="flex:0 0 120px"><span>PIN code</span><input type="text" id="u-pin" value="'+esc(c.pincode||"")+'"></label>'+
+      '</div>'+
+      '<label class="fld"><span>Notes</span><input type="text" id="u-notes" value="'+esc(c.notes||"")+'" placeholder="Sizes that fit, preferences, anything"></label>'+
+      '<button class="btn ghost sm" id="u-copy" style="align-self:flex-start">Copy address</button>'+
+      (st.sales.length ? '<div><span class="eyebrow" style="display:block;margin-bottom:9px">Order history</span>'+
+        '<div class="scroll"><table class="tbl"><tbody>'+st.sales.slice(0,20).map(function(x){
+          return '<tr><td class="money" style="font-size:12px;color:var(--ink-2)">'+esc(niceDate(x.date))+'</td>'+
+            '<td>'+esc(x.itemName||"")+'<div class="muted" style="font-size:12px">'+esc(x.variantLabel||"")+'</div></td>'+
+            '<td class="num">'+inr(saleGross(x))+'</td>'+
+            '<td><span class="paychip '+(x.pay||"unpaid")+'">'+esc(PAY[x.pay||"unpaid"])+'</span></td></tr>';
+        }).join("")+'</tbody></table></div></div>' : '')+
+      '<button class="btn danger" id="u-del" style="align-self:flex-start">Remove customer</button>',
+      '<button class="btn ghost" id="u-cancel">Cancel</button><button class="btn primary" id="u-save">Save</button>');
+
+    $("#u-copy").onclick = function(){
+      copyText([$("#u-name").value, $("#u-phone").value, $("#u-addr").value,
+        [$("#u-city").value, $("#u-state").value, $("#u-pin").value].filter(Boolean).join(" ")]
+        .filter(Boolean).join("\n"));
+    };
+    $("#u-cancel").onclick = closeModal;
+    $("#u-del").onclick = function(){
+      ask("Remove customer?", "Their past orders stay in your sales history with the address they were shipped to. Only the saved contact is removed.", "Remove", async function(){
+        S.customers = S.customers.filter(function(x){ return x.id !== c.id; });
+        const ok = await save(); render();
+        toast(ok ? "Customer removed" : "NOT SAVED \u2014 read the warning at the top");
+      });
+    };
+    $("#u-save").onclick = async function(){
+      c.name = $("#u-name").value.trim() || c.name;
+      c.phone = $("#u-phone").value.trim();
+      c.address = $("#u-addr").value.trim();
+      c.city = $("#u-city").value.trim();
+      c.state = $("#u-state").value.trim();
+      c.pincode = $("#u-pin").value.trim();
+      c.notes = $("#u-notes").value.trim();
+      // parcels not yet packed should go to the new address; shipped ones keep
+      // the address they actually went to
+      let moved = 0;
+      S.sales.forEach(function(x){
+        if (x.customerId === c.id && (x.ship||"pending") === "pending"){
+          x.custName = c.name; x.custPhone = c.phone; x.custAddr = addrLines(c); moved++;
+        }
+      });
+      const ok = await save(); closeModal(); render();
+      toast(ok ? (moved ? "Saved \u00B7 "+moved+" unpacked parcel"+(moved>1?"s":"")+" updated" : "Saved")
+               : "NOT SAVED \u2014 read the warning at the top");
+    };
+  }
+
+  function exportCustomersCSV(){
+    const head = ["Name","Phone","Address","City","State","PIN","Orders","Pieces","Spent (INR)","Owed (INR)","Last order","Notes"];
+    const rows = S.customers.map(function(c){
+      const st = custStats(c.id);
+      return [c.name||"", c.phone||"", c.address||"", c.city||"", c.state||"", c.pincode||"",
+              st.orders, st.pieces, st.spent.toFixed(2), st.owed.toFixed(2), st.last, c.notes||""];
+    });
+    const csv = [head].concat(rows).map(function(r){
+      return r.map(function(x){ return '"'+String(x==null?"":x).replace(/"/g,'""')+'"'; }).join(",");
+    }).join("\n");
+    dl("customers-"+today()+".csv", csv, "text/csv");
+    toast("Customer list downloaded");
   }
 
   /* ---------- shipment ---------- */
