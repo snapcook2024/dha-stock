@@ -238,6 +238,62 @@
   .paychip.paid{ background:var(--teal-soft); border-color:#CFE0D5; color:var(--teal); }
   .paychip.partial{ background:var(--marigold-soft); border-color:#E7D3A6; color:var(--marigold); }
   .paychip.unpaid{ background:var(--madder-soft); border-color:#EFC4BB; color:var(--madder); }
+  .triptray{
+    background:#FAFCF9; border:1px solid #C9D8CC; border-radius:13px; padding:14px 15px;
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .triptray .hint{ font-size:12.5px; color:var(--ink-2); line-height:1.5; }
+  .stockbadge.held{ background:var(--marigold); }
+  .sz .held{
+    background:var(--marigold-soft); color:var(--marigold); border-radius:5px;
+    padding:1px 5px; font-weight:600;
+  }
+  .trips{ border-top:1px solid var(--line-2); padding-top:11px; display:flex; flex-direction:column; gap:5px; }
+  .triprow{
+    display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:11.5px;
+    background:#F3F7F2; border-radius:7px; padding:4px 8px; color:var(--ink-2);
+  }
+  .triprow b{ color:var(--ink); font-weight:600; }
+  .triprow span:nth-child(2){ flex:1; }
+  .soldbar{
+    width:100%; min-width:110px; height:7px; border-radius:999px; background:var(--line-2); overflow:hidden;
+  }
+  .soldbar span{ display:block; height:100%; background:var(--teal); border-radius:999px; }
+  .seg2{
+    display:inline-flex; gap:2px; background:var(--surface); border:1px solid var(--line);
+    border-radius:10px; padding:3px; flex:0 0 auto;
+  }
+  .seg2 button{
+    appearance:none; border:0; background:none; cursor:pointer; border-radius:8px;
+    font-family:var(--ui); font-size:13px; font-weight:600; color:var(--ink-3); padding:8px 13px; white-space:nowrap;
+  }
+  .seg2 button:hover{ color:var(--ink); }
+  .seg2 button.on{ background:var(--velvet); color:var(--gold-2); }
+  .btabs{ display:flex; gap:7px; flex-wrap:wrap; margin-bottom:16px; }
+  .btab{
+    appearance:none; font-family:var(--ui); font-size:13.5px; font-weight:600; cursor:pointer;
+    padding:10px 15px; border-radius:11px; border:1px solid var(--line); background:var(--surface);
+    color:var(--ink-2); display:inline-flex; align-items:center; gap:8px; line-height:1;
+  }
+  .btab:hover{ border-color:var(--ink-3); color:var(--ink); }
+  .btab.on{ background:var(--velvet); border-color:var(--velvet); color:var(--gold-2); }
+  .btab .cnt{
+    font-family:var(--mono); font-size:11px; font-weight:500; background:#F0F4EF;
+    color:var(--ink-2); border-radius:6px; padding:2px 6px;
+  }
+  .btab.on .cnt{ background:rgba(210,177,116,.2); color:var(--gold-2); }
+  .btab.add{ border-style:dashed; color:var(--ink-3); }
+  .btab.add:hover{ border-style:solid; color:var(--plum); border-color:var(--plum); }
+
+  .bhead{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--r);
+    padding:17px 18px; margin-bottom:16px; display:flex; flex-direction:column; gap:15px;
+  }
+  .bhead-top{ display:flex; align-items:flex-start; gap:12px; }
+  .bhead-name{ font-family:var(--display); font-size:21px; font-weight:600; color:var(--ink); }
+  .bhead-sub{ font-family:var(--mono); font-size:12px; color:var(--ink-2); margin-top:5px; }
+  .bhead-top .btn{ margin-left:auto; flex:0 0 auto; }
+  .warnmark{ color:var(--marigold); font-weight:600; }
   .toolbar{ display:flex; gap:11px; align-items:center; flex-wrap:wrap; margin-bottom:18px; }
   .toolbar .grow{ flex:1 1 220px; }
 
@@ -395,6 +451,7 @@
       <div class="seg">
         <button class="tab on" data-tab="dash">Overview</button>
         <button class="tab" data-tab="inv">Stock</button>
+        <button class="tab" data-tab="pb">Pre-books</button>
         <button class="tab" data-tab="sales">Sales</button>
         <button class="tab" data-tab="cust">Customers</button>
         <button class="tab" data-tab="set">Settings</button>
@@ -407,6 +464,7 @@
     <div id="boot" class="loading">Opening the stock room&hellip;</div>
     <section class="page" id="p-dash"></section>
     <section class="page" id="p-inv"></section>
+    <section class="page" id="p-pb"></section>
     <section class="page" id="p-sales"></section>
     <section class="page" id="p-cust"></section>
     <section class="page" id="p-set"></section>
@@ -423,10 +481,11 @@
   const DATA_KEY = "cim:data";
   const IMG_PREFIX = "cim:img:";
 
-  const SCHEMA = 3;   // 1 = single photo, 2 = photo list, 3 = design codes
-  let S = { schema: SCHEMA, rev: 0, rate: 2.60, lowStock: 2, nextCode: 1, lastBackupAt: 0, items: [], sales: [], customers: [] };
+  const SCHEMA = 5;   // 5 = each design belongs to one batch
+  let S = { schema: SCHEMA, rev: 0, rate: 2.60, lowStock: 2, nextCode: 1, nextBatch: 1, nextPB: 1,
+            lastBackupAt: 0, items: [], sales: [], customers: [], batches: [], prebooks: [] };
   let IMG = {};
-  let view = { tab:"dash", q:"", cat:"", month:"", ship:"", cq:"" };
+  let view = { tab:"dash", q:"", cat:"", month:"", ship:"", cq:"", pbf:"", batch:"", mode:"cards", sbatch:"" };
 
   const HANGER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8a2.5 2.5 0 1 1 2.5-2.5"/><path d="M12 8v2.2L3.6 15.7A1.6 1.6 0 0 0 4.5 18.7h15a1.6 1.6 0 0 0 .9-2.9L12 10.2"/></svg>';
 
@@ -442,7 +501,7 @@
   const niceDate = d => { if(!d) return "\u2014"; const x=new Date(d+"T00:00:00"); return isNaN(x)?d:x.toLocaleDateString("en-GB",{day:"2-digit",month:"short"}); };
 
   const costINR = (buyTHB, rate) => n(buyTHB) * n(rate);
-  const unitProfit = it => n(it.sellINR) - costINR(it.buyTHB, S.rate);
+  const unitProfit = it => n(it.sellINR) - landedOf(it);
   const marginPct = it => n(it.sellINR) > 0 ? (unitProfit(it) / n(it.sellINR)) * 100 : 0;
   const stockOf = it => (it.variants||[]).reduce((a,v)=> a + n(v.qty), 0);
   /* Profit on a parcel = margin on the goods, plus whatever the customer paid
@@ -451,7 +510,10 @@
      whole point of tracking it. */
   const saleGoods  = s => n(s.qty) * n(s.unitSellINR);
   const saleGross  = s => saleGoods(s) + n(s.shipCharged);
-  const saleProfit = s => n(s.qty) * (n(s.unitSellINR) - costINR(s.buyTHB, s.rate))
+  // Sales recorded before trips existed have no landed cost; they keep the
+  // cost and rate they were frozen with, so old profit figures never move.
+  const saleCost   = s => (s.landedINR != null) ? n(s.landedINR) : costINR(s.buyTHB, s.rate);
+  const saleProfit = s => n(s.qty) * (n(s.unitSellINR) - saleCost(s))
                           + n(s.shipCharged) - n(s.shipCost);
   const salePaid   = s => (!s.pay || s.pay === "paid") ? saleGross(s) : n(s.paid);
   const saleDue    = s => Math.max(0, saleGross(s) - salePaid(s));
@@ -528,6 +590,144 @@
     const c = String(code||"").trim().toUpperCase();
     return S.items.some(function(it){ return it.id !== exceptId && String(it.code||"").toUpperCase() === c; });
   }
+
+  /* ---------- batches ----------
+     A batch is one buying trip, and a design belongs to exactly one of them.
+     That is how the buying actually works: each trip brings new designs, not
+     more of the old ones. So a design has one cost, one exchange rate and one
+     share of that trip's freight - no averaging, nothing to untangle. */
+  const batchById = id => S.batches.find(function(b){ return b.id === id; });
+  const batchOf   = it => batchById(it && it.batchId);
+  function nextBatchNo(){
+    let max = 0;
+    S.batches.forEach(function(b){ if (Math.round(n(b.no)) > max) max = Math.round(n(b.no)); });
+    return max + 1;
+  }
+  function batchName(b){
+    if (!b) return "Unsorted";
+    return b.name ? ("Batch " + Math.round(n(b.no)) + " \u00B7 " + b.name) : ("Batch " + Math.round(n(b.no)));
+  }
+  const batchShort = b => b ? ("Batch " + Math.round(n(b.no))) : "Unsorted";
+  function newBatch(name, date, rate){
+    const b = { id: uid(), no: nextBatchNo(), name: (name||"").trim(),
+                date: date || today(), rate: n(rate) || n(S.rate),
+                freightINR: 0, pieces: 0, createdAt: Date.now() };
+    S.batches.push(b);
+    return b;
+  }
+  // freight is shared evenly across every piece the trip brought in
+  function freightEach(b){
+    if (!b || !n(b.freightINR)) return 0;
+    return n(b.freightINR) / Math.max(1, Math.round(n(b.pieces)));
+  }
+  const rateOf = it => { const b = batchOf(it); return b ? n(b.rate) : n(S.rate); };
+  // what one piece of this design really cost, landed in India
+  const landedOf = it => n(it.buyTHB) * rateOf(it) + freightEach(batchOf(it));
+  const itemsOfBatch = id => S.items.filter(function(it){ return (it.batchId || "") === (id || ""); });
+  const batchesSorted = () => S.batches.slice().sort(function(a,b){ return n(a.no) - n(b.no); });
+
+  function totalStockCost(){
+    return S.items.reduce(function(a, it){ return a + stockOf(it) * landedOf(it); }, 0);
+  }
+
+  /* Everything a batch is worth knowing: what went in, what came back out. */
+  function batchStats(b){
+    const mine = b ? itemsOfBatch(b.id) : S.items.filter(function(it){ return !batchOf(it); });
+    const ids = {};
+    mine.forEach(function(it){ ids[it.id] = it; });
+    const left = mine.reduce(function(a, it){ return a + stockOf(it); }, 0);
+    const stockValue = mine.reduce(function(a, it){ return a + stockOf(it) * landedOf(it); }, 0);
+    const retail = mine.reduce(function(a, it){ return a + stockOf(it) * n(it.sellINR); }, 0);
+    let soldPcs = 0, revenue = 0, profit = 0;
+    S.sales.forEach(function(sl){
+      if (!ids[sl.itemId]) return;
+      soldPcs += n(sl.qty);
+      revenue += saleGross(sl);
+      profit  += saleProfit(sl);
+    });
+    const received = b ? Math.max(Math.round(n(b.pieces)), left + soldPcs) : (left + soldPcs);
+    return {
+      designs: mine.length, received: received, left: left, sold: soldPcs,
+      stockValue: stockValue, retail: retail, revenue: revenue, profit: profit,
+      invested: investedIn(mine, b),
+      waiting: retail - stockValue
+    };
+  }
+  // what the trip cost: every piece ever brought in, at its landed cost
+  function investedIn(mine, b){
+    let goods = 0, pieces = 0;
+    mine.forEach(function(it){
+      const sold = S.sales.filter(function(sl){ return sl.itemId === it.id; })
+        .reduce(function(a, sl){ return a + n(sl.qty); }, 0);
+      const everHad = stockOf(it) + sold;
+      goods += everHad * n(it.buyTHB);
+      pieces += everHad;
+    });
+    const rate = b ? n(b.rate) : n(S.rate);
+    return goods * rate + (b ? n(b.freightINR) : 0);
+  }
+  // keep a batch's piece count honest after designs are added or stock changes
+  function recountBatch(b){
+    if (!b) return;
+    let pcs = 0;
+    itemsOfBatch(b.id).forEach(function(it){
+      const sold = S.sales.filter(function(sl){ return sl.itemId === it.id; })
+        .reduce(function(a, sl){ return a + n(sl.qty); }, 0);
+      pcs += stockOf(it) + sold;
+    });
+    b.pieces = pcs;
+  }
+  /* Changing a batch's rate or freight changes what its pieces cost. Sales
+     already recorded are restated only when you ask for it. */
+  function restateBatch(b){
+    const ids = {};
+    itemsOfBatch(b.id).forEach(function(it){ ids[it.id] = it; });
+    S.sales.forEach(function(sl){
+      const it = ids[sl.itemId];
+      if (!it) return;
+      sl.landedINR = landedOf(it);
+    });
+  }
+
+  /* ---------- pre-books ---------- */
+  const fmtPB = num => "PB" + String(num).padStart(4, "0");
+  const PB = { open:"To buy", reserved:"Reserved", done:"Sold", cancelled:"Cancelled" };
+  function takePBCode(){
+    let max = 0;
+    S.prebooks.forEach(function(p){
+      const m = /^PB0*(\d+)$/i.exec(String(p.code||""));
+      if (m && +m[1] > max) max = +m[1];
+    });
+    const num = Math.max(max + 1, Math.round(n(S.nextPB)) || 1);
+    S.nextPB = num + 1;
+    return fmtPB(num);
+  }
+  // pieces promised to someone out of stock that is physically here
+  function reservedOf(itemId, variantId){
+    return S.prebooks.filter(function(p){
+      return p.status === "reserved" && p.itemId === itemId && p.variantId === variantId;
+    }).reduce(function(a, p){ return a + n(p.qty); }, 0);
+  }
+  const freeOf = (it, v) => Math.max(0, n(v.qty) - reservedOf(it.id, v.id));
+  const reservedTotal = it => (it.variants||[]).reduce(function(a, v){ return a + reservedOf(it.id, v.id); }, 0);
+  const pbGross = p => n(p.qty) * n(p.priceINR);
+  /* Stock has just arrived: any promise waiting on this design becomes a
+     reservation, oldest promise first, as far as the new pieces go round. */
+  function releaseOpenPrebooks(it){
+    let freed = 0;
+    S.prebooks.filter(function(p){ return p.status === "open" && p.itemId === it.id; })
+      .sort(function(a,b){ return String(a.date||"").localeCompare(String(b.date||"")); })
+      .forEach(function(p){
+        const v = (it.variants||[]).find(function(x){ return x.id === p.variantId; });
+        if (!v) return;
+        if (freeOf(it, v) >= n(p.qty)){ p.status = "reserved"; freed++; }
+      });
+    return freed;
+  }
+  const advancesHeld = () => S.prebooks
+    .filter(function(p){ return p.status === "open" || p.status === "reserved"; })
+    .reduce(function(a, p){ return a + n(p.advance); }, 0);
+
 
   function toast(msg){
     const h = $("#toastHost");
@@ -691,6 +891,7 @@
         const d = JSON.parse(v);
         S = Object.assign(S, d);
         S.items = S.items || []; S.sales = S.sales || []; S.customers = S.customers || [];
+        S.batches = S.batches || []; S.prebooks = S.prebooks || [];
         S.rate = n(S.rate) || 1;
         S.lowStock = Math.max(0, Math.round(n(S.lowStock)));
       }
@@ -738,6 +939,29 @@
         try { const v = await KV.get(IMG_PREFIX + id); if (v) IMG[id] = v; } catch(e){}
       }));
     } catch(e){}
+
+    /* Everything you already have becomes Batch 1, at the rate in Settings and
+       no freight - the truest thing that can be said about stock bought before
+       any of this was tracked. Nothing is renamed, nothing is recounted. */
+    const homeless = S.items.filter(function(it){ return !it.batchId || !batchById(it.batchId); });
+    if (homeless.length){
+      let first = batchesSorted()[0];
+      if (!first){
+        first = { id: uid(), no: 1, name: "", date: today(),
+                  rate: n(S.rate) || 1, freightINR: 0, pieces: 0, createdAt: Date.now() };
+        S.batches.push(first);
+      }
+      homeless.forEach(function(it){ it.batchId = first.id; });
+      backfilled = true;
+    }
+    // sizes carried lots in an earlier build; the count is what matters now
+    S.items.forEach(function(it){ (it.variants||[]).forEach(function(v){
+      if (v.lots){ delete v.lots; backfilled = true; }
+    });});
+    S.batches.forEach(function(b){
+      if (!n(b.no)) { b.no = nextBatchNo(); backfilled = true; }
+      recountBatch(b);
+    });
 
     // designs added before codes existed get one now, oldest first
     S.items.slice().sort(function(a,b){ return (a.createdAt||0)-(b.createdAt||0); })
@@ -865,10 +1089,93 @@
     document.querySelectorAll(".page").forEach(function(p){ p.classList.toggle("on", p.id==="p-"+view.tab); });
     if (view.tab==="dash") renderDash();
     if (view.tab==="inv") renderInv();
+    if (view.tab==="pb") renderPB();
     if (view.tab==="sales") renderSales();
     if (view.tab==="cust") renderCust();
     if (view.tab==="set") renderSet();
   }
+  /* Batch by batch, and the total underneath: what went in, what came back. */
+  function batchSummaryHTML(){
+    const rows = batchesSorted().map(function(b){ return { b:b, st:batchStats(b) }; });
+    const loose = S.items.filter(function(it){ return !batchOf(it); });
+    if (loose.length) rows.push({ b:null, st:batchStats(null) });
+    const orph = orphanSales();
+    const T = rows.reduce(function(a,r){
+      a.designs += r.st.designs; a.received += r.st.received; a.sold += r.st.sold;
+      a.left += r.st.left; a.invested += r.st.invested; a.revenue += r.st.revenue;
+      a.profit += r.st.profit; a.stockValue += r.st.stockValue; a.waiting += r.st.waiting;
+      return a;
+    }, {designs:0,received:0,sold:0,left:0,invested:0,revenue:0,profit:0,stockValue:0,waiting:0});
+    orphanSales().forEach(function(x){
+      T.sold += n(x.qty); T.revenue += saleGross(x); T.profit += saleProfit(x);
+    });
+
+    return '<h2 class="sec">Batch by batch</h2>'+
+      '<div class="card scroll"><table class="tbl"><thead><tr>'+
+        '<th>Batch</th><th class="num">Designs</th><th class="num">Bought</th>'+
+        '<th class="num">Put in</th><th>Sold vs left</th><th class="num">Taken back</th>'+
+        '<th class="num">Profit</th><th class="num">Left</th><th class="num">Still to earn</th>'+
+      '</tr></thead><tbody>'+
+      rows.map(function(r){
+        const b = r.b, st = r.st;
+        const pct = st.received > 0 ? Math.round(st.sold / st.received * 100) : 0;
+        const paidBack = st.invested > 0 ? Math.min(100, Math.round(st.revenue / st.invested * 100)) : 0;
+        const best = bestSeller(b);
+        return '<tr '+(b?'data-bsum="'+b.id+'" style="cursor:pointer"':'')+'>'+
+          '<td><div style="font-weight:600">'+esc(b ? batchShort(b) : "Unsorted")+'</div>'+
+            '<div class="muted" style="font-size:12px">'+esc(b ? (b.name || niceDate(b.date)) : "no batch set")+'</div></td>'+
+          '<td class="num">'+st.designs+'</td>'+
+          '<td class="num">'+st.received+'</td>'+
+          '<td class="num">'+inr(st.invested)+'</td>'+
+          '<td>'+
+            '<div class="soldbar"><span style="width:'+pct+'%"></span></div>'+
+            '<div class="money" style="font-size:11.5px;color:var(--ink-2);margin-top:4px">'+
+              st.sold+' sold \u00B7 '+st.left+' left \u00B7 '+pct+'%</div>'+
+            (best ? '<div class="muted" style="font-size:11.5px;margin-top:2px">best: '+esc(best.name)+' ('+best.sold+')</div>' : '')+
+          '</td>'+
+          '<td class="num">'+inr(st.revenue)+
+            '<div class="muted" style="font-size:11.5px">'+paidBack+'% of cost back</div></td>'+
+          '<td class="num '+(st.profit>=0?'pos':'neg')+'" style="font-weight:600">'+inr(st.profit)+'</td>'+
+          '<td class="num">'+st.left+'</td>'+
+          '<td class="num muted">'+inr(st.waiting)+'</td></tr>';
+      }).join("")+
+      (orph.length ? '<tr><td><div style="font-weight:600">Deleted designs</div>'+
+          '<div class="muted" style="font-size:12px">sales kept, design gone</div></td>'+
+        '<td class="num muted">\u2014</td><td class="num muted">\u2014</td><td class="num muted">\u2014</td>'+
+        '<td class="money" style="font-size:12px">'+orph.reduce(function(a,x){ return a+n(x.qty); },0)+' sold</td>'+
+        '<td class="num">'+inr(orph.reduce(function(a,x){ return a+saleGross(x); },0))+'</td>'+
+        '<td class="num '+(orph.reduce(function(a,x){ return a+saleProfit(x); },0)>=0?'pos':'neg')+'" style="font-weight:600">'+
+          inr(orph.reduce(function(a,x){ return a+saleProfit(x); },0))+'</td>'+
+        '<td class="num muted">\u2014</td><td class="num muted">\u2014</td></tr>' : '')+
+      '<tr style="background:var(--velvet);color:#fff">'+
+        '<td style="color:var(--gold-2);font-weight:600">All batches</td>'+
+        '<td class="num" style="color:#fff">'+T.designs+'</td>'+
+        '<td class="num" style="color:#fff">'+T.received+'</td>'+
+        '<td class="num" style="color:#fff">'+inr(T.invested)+'</td>'+
+        '<td style="color:#fff" class="money">'+T.sold+' sold \u00B7 '+T.left+' left</td>'+
+        '<td class="num" style="color:#fff">'+inr(T.revenue)+'</td>'+
+        '<td class="num" style="color:var(--gold-2);font-weight:600">'+inr(T.profit)+'</td>'+
+        '<td class="num" style="color:#fff">'+T.left+'</td>'+
+        '<td class="num" style="color:#A9BDB0">'+inr(T.waiting)+'</td></tr>'+
+      '</tbody></table></div>'+
+      '<div class="card" style="padding:16px 18px;margin-top:12px;font-size:13.5px;line-height:1.6;color:var(--ink-2)">'+
+        '<b style="color:var(--ink)">Put in</b> is goods at that batch\u2019s own rate, plus its freight. '+
+        '<b style="color:var(--ink)">Taken back</b> is what the pieces sold for. A batch has paid for itself once taken back passes put in \u2014 '+
+        'everything after that is profit, and <b style="color:var(--ink)">still to earn</b> is what is waiting on the rail.'+
+      '</div>';
+  }
+
+  // the design that moved most in a batch
+  function bestSeller(b){
+    const mine = b ? itemsOfBatch(b.id) : S.items.filter(function(it){ return !batchOf(it); });
+    let best = null;
+    mine.forEach(function(it){
+      const st = itemStats(it);
+      if (st.sold > 0 && (!best || st.sold > best.sold)) best = { name: it.name, sold: st.sold };
+    });
+    return best;
+  }
+
   function kpi(lbl,val,note,cls,box){
     return '<div class="kpi '+(box||"")+'"><div class="lbl">'+esc(lbl)+'</div>'+
       '<div class="val '+(cls||"")+'">'+esc(val)+'</div>'+
@@ -886,13 +1193,14 @@
       return;
     }
 
-    let units=0, costTHB=0, retailINR=0;
+    let units=0, retailINR=0, held=0;
     S.items.forEach(function(it){
       const q = stockOf(it);
-      units += q; costTHB += q*n(it.buyTHB); retailINR += q*n(it.sellINR);
+      units += q; retailINR += q*n(it.sellINR); held += reservedTotal(it);
     });
-    const lockedINR = costTHB * n(S.rate);
+    const lockedINR = totalStockCost();          // true landed cost of what is on the rail
     const potential = retailINR - lockedINR;
+    const unbilled = S.batches.filter(function(b){ return !n(b.freightINR) && !b.opening; }).length;
 
     const thisMonth = ym(today());
     const mSales = S.sales.filter(function(s){ return ym(s.date)===thisMonth; });
@@ -921,8 +1229,8 @@
     el.innerHTML =
       '<h2 class="sec">Money sitting in stock</h2>'+
       '<div class="kpis">'+
-        kpi("On the rail", String(units)+" pcs", S.items.length+" designs")+
-        kpi("Paid out", thb(costTHB), "= "+inr(lockedINR)+" at today\u2019s rate")+
+        kpi("On the rail", String(units)+" pcs", S.items.length+" designs"+(held?" \u00B7 "+held+" reserved":""))+
+        kpi("Paid out", inr(lockedINR), unbilled ? "freight missing on "+unbilled+" trip"+(unbilled>1?"s":"") : "landed cost, freight included")+
         kpi("Worth if it all sells", inr(retailINR), "at your listed prices")+
         kpi("Profit waiting", inr(potential), "not earned until it sells", potential>=0?"pos":"neg", "tint")+
       '</div>'+
@@ -934,6 +1242,7 @@
         kpi("All-time sales", inr(allRev), S.sales.length+" entries")+
         kpi("All-time profit", inr(allProfit), "after goods and shipping", allProfit>=0?"pos":"neg")+
         kpi("Still owed to you", inr(owedAll), owedAllCount+" parcel"+(owedAllCount===1?"":"s")+" unpaid", owedAll>0?"neg":"pos")+
+        kpi("Advances held", inr(advancesHeld()), "customers\u2019 money, not profit", advancesHeld()>0?"neg":"")+
       '</div>'+
 
       (function(){
@@ -947,6 +1256,7 @@
               '<td style="text-align:right"><button class="btn ghost sm" data-pack="'+x.id+'">Parcel</button></td></tr>';
           }).join("")+'</tbody></table></div>';
       })()+
+      (S.batches.length ? batchSummaryHTML() : "")+
       (low.length ?
         '<h2 class="sec">Running low <span class="cnt">'+low.length+'</span></h2>'+
         '<div class="card scroll"><table class="tbl"><thead><tr>'+
@@ -967,6 +1277,9 @@
           '<td class="num '+(e[1].profit>=0?'pos':'neg')+'">'+inr(e[1].profit)+'</td></tr>';
         }).join("")+'</tbody></table></div>' : "");
 
+    el.querySelectorAll("[data-bsum]").forEach(function(b){
+      b.onclick = function(){ view.batch = b.dataset.bsum; view.mode = "table"; view.tab = "inv"; render(); };
+    });
     el.querySelectorAll("[data-pack]").forEach(function(b){
       b.onclick = function(){ shipModal(S.sales.find(function(x){ return x.id===b.dataset.pack; })); };
     });
@@ -980,15 +1293,32 @@
     const el = $("#p-inv");
     const cats = [...new Set(S.items.map(function(i){ return i.category; }).filter(Boolean))].sort();
 
+    const all = batchesSorted();
+    if (view.batch && !batchById(view.batch)) view.batch = "";
+    const cur = view.batch ? batchById(view.batch) : null;
+
     let html =
+      '<div class="btabs">'+
+        '<button class="btab '+(!view.batch?'on':'')+'" data-b="">All designs</button>'+
+        all.map(function(b){
+          return '<button class="btab '+(view.batch===b.id?'on':'')+'" data-b="'+b.id+'">'+esc(batchShort(b))+
+            '<span class="cnt">'+itemsOfBatch(b.id).length+'</span></button>';
+        }).join("")+
+        '<button class="btab add" id="b-new">+ New batch</button>'+
+      '</div>'+
+      (cur ? batchHeadHTML(cur) : '')+
       '<div class="toolbar">'+
         '<div class="grow"><input type="text" id="q" placeholder="Search designs\u2026" value="'+esc(view.q)+'"></div>'+
         (cats.length ? '<select id="cat" style="flex:0 1 170px"><option value="">All categories</option>'+
           cats.map(function(c){ return '<option '+(view.cat===c?'selected':'')+'>'+esc(c)+'</option>'; }).join("")+'</select>' : '')+
-        '<button class="btn primary" id="add" style="flex:0 0 auto">+ Add design</button>'+
+        '<div class="seg2">'+
+          '<button class="'+(view.mode==="cards"?"on":"")+'" data-mode="cards">Cards</button>'+
+          '<button class="'+(view.mode==="table"?"on":"")+'" data-mode="table">Full data</button>'+
+        '</div>'+
+        '<button class="btn primary" id="add" style="flex:0 0 auto">+ Add design'+(cur?' to '+esc(batchShort(cur)):'')+'</button>'+
       '</div>';
 
-    let list = S.items.slice();
+    let list = view.batch ? itemsOfBatch(view.batch) : S.items.slice();
     if (view.q){
       const q = view.q.toLowerCase();
       list = list.filter(function(i){ return ((i.code||"")+" "+i.name+" "+(i.category||"")+" "+(i.notes||"")).toLowerCase().indexOf(q)>=0; });
@@ -1001,7 +1331,13 @@
         '<p>Add a design once \u2014 photo, cost in Baht, price in Rupees, and a row for each size you carry.</p>'+
         '<button class="btn primary" id="add2">Add a design</button></div>';
     } else if (!list.length){
-      html += '<div class="card empty"><h3>Nothing matches</h3><p>Try a different word, or clear the category filter.</p></div>';
+      html += cur
+        ? '<div class="card empty"><h3>'+esc(batchShort(cur))+' is empty</h3>'+
+          '<p>Add the designs you brought back on this trip. They all share its exchange rate and its share of the freight.</p>'+
+          '<button class="btn primary" id="add2">Add a design to '+esc(batchShort(cur))+'</button></div>'
+        : '<div class="card empty"><h3>Nothing matches</h3><p>Try a different word, or clear the category filter.</p></div>';
+    } else if (view.mode === "table"){
+      html += dataTableHTML(list, !view.batch);
     } else {
       html += '<div class="grid">' + list.map(cardHTML).join("") + '</div>';
     }
@@ -1013,8 +1349,21 @@
       const f = $("#q", el); f.focus(); f.setSelectionRange(f.value.length, f.value.length);
     };
     const ci = $("#cat", el); if (ci) ci.onchange = function(e){ view.cat = e.target.value; renderInv(); };
-    const a1 = $("#add", el); if (a1) a1.onclick = function(){ itemModal(null); };
-    const a2 = $("#add2", el); if (a2) a2.onclick = function(){ itemModal(null); };
+    const a1 = $("#add", el); if (a1) a1.onclick = function(){ itemModal(null, view.batch||null); };
+    const a2 = $("#add2", el); if (a2) a2.onclick = function(){ itemModal(null, view.batch||null); };
+    el.querySelectorAll("[data-mode]").forEach(function(b){
+      b.onclick = function(){ view.mode = b.dataset.mode; renderInv(); };
+    });
+    const dl = $("#inv-csv", el);
+    if (dl) dl.onclick = function(){ exportStockCSV(list, cur); };
+    el.querySelectorAll("[data-row]").forEach(function(b){
+      b.onclick = function(){ itemModal(byId(b.dataset.row)); };
+    });
+    el.querySelectorAll(".btab[data-b]").forEach(function(b){
+      b.onclick = function(){ view.batch = b.dataset.b; view.q=""; renderInv(); };
+    });
+    const bn = $("#b-new", el); if (bn) bn.onclick = function(){ batchModal(null); };
+    const be = $("#b-edit", el); if (be) be.onclick = function(){ batchModal(cur); };
 
     el.querySelectorAll("[data-gal]").forEach(function(b){ b.onclick = function(){ galleryModal(byId(b.dataset.gal)); }; });
     el.querySelectorAll("[data-sell]").forEach(function(b){ b.onclick = function(){ sellModal(byId(b.dataset.sell)); }; });
@@ -1023,15 +1372,243 @@
   }
   function byId(id){ return S.items.find(function(i){ return i.id===id; }); }
 
+  /* Everything that ever happened to one design, rebuilt from the sales record:
+     what is still here, what left, and what it earned. */
+  function itemStats(it){
+    const mine = S.sales.filter(function(x){ return x.itemId === it.id; });
+    const sold = mine.reduce(function(a,x){ return a + n(x.qty); }, 0);
+    const revenue = mine.reduce(function(a,x){ return a + saleGross(x); }, 0);
+    const profit = mine.reduce(function(a,x){ return a + saleProfit(x); }, 0);
+    const left = stockOf(it);
+    const landed = landedOf(it);
+    return {
+      bought: left + sold, sold: sold, left: left,
+      reserved: reservedTotal(it),
+      landed: landed, revenue: revenue, profit: profit,
+      stockValue: left * landed,
+      waiting: left * (n(it.sellINR) - landed),
+      lastSold: mine.map(function(x){ return x.date || ""; }).sort().pop() || ""
+    };
+  }
+
+  /* Sales whose design has since been deleted belong to no batch. They still
+     count in your totals, so say so rather than letting the numbers disagree. */
+  function saleBatch(sl){
+    const it = byId(sl.itemId);
+    if (it) return batchOf(it);                 // the design says where it came from
+    return sl.batchId ? batchById(sl.batchId) : null;   // design gone: fall back to the stamp
+  }
+
+  function orphanSales(){
+    const live = {};
+    S.items.forEach(function(it){ live[it.id] = true; });
+    return S.sales.filter(function(x){ return !live[x.itemId]; });
+  }
+
+  // the figures for the batch you are looking at
+  function batchHeadHTML(b){
+    const st = batchStats(b);
+    const fr = freightEach(b);
+    return '<div class="bhead">'+
+      '<div class="bhead-top">'+
+        '<div><div class="bhead-name">'+esc(batchName(b))+'</div>'+
+          '<div class="bhead-sub">'+esc(niceDate(b.date))+' \u00B7 \u0E3F1 = \u20B9'+n(b.rate).toFixed(2)+
+            ' \u00B7 '+(n(b.freightINR) ? 'freight '+inr(b.freightINR)+' ('+inr(fr)+' a piece)'
+                                        : '<span class="warnmark">freight not entered</span>')+'</div></div>'+
+        '<button class="btn ghost sm" id="b-edit">Edit batch</button>'+
+      '</div>'+
+      '<div class="kpis">'+
+        kpi("Designs", String(st.designs), st.received+" pieces bought")+
+        kpi("Put in", inr(st.invested), "goods and freight")+
+        kpi("Taken back", inr(st.revenue), st.sold+" sold, "+st.left+" left")+
+        kpi("Profit so far", inr(st.profit), st.waiting>0 ? inr(st.waiting)+" still to earn" : "", st.profit>=0?"pos":"neg", "tint")+
+      '</div></div>';
+  }
+
+  function batchModal(b){
+    const isNew = !b;
+    const d = b || { id:uid(), no:nextBatchNo(), name:"", date:today(), rate:n(S.rate), freightINR:0, pieces:0 };
+    const st = isNew ? null : batchStats(d);
+    modal(isNew ? "New batch" : batchName(d),
+      '<div class="row">'+
+        '<label class="fld" style="flex:0 0 90px"><span>No.</span>'+
+          '<input type="number" id="b-no" min="1" step="1" value="'+Math.round(n(d.no))+'"></label>'+
+        '<label class="fld"><span>Name it</span>'+
+          '<input type="text" id="b-name" value="'+esc(d.name||"")+'" placeholder="Pratunam, Platinum mall\u2026"></label>'+
+      '</div>'+
+      '<div class="row">'+
+        '<label class="fld"><span>Bought on</span><input type="date" id="b-date" value="'+esc(d.date||today())+'"></label>'+
+        '<label class="fld" style="flex:0 0 140px"><span>Rate paid</span>'+
+          '<input type="number" id="b-rate" step="0.01" min="0" value="'+n(d.rate)+'"></label>'+
+      '</div>'+
+      '<label class="fld"><span>Freight, customs, courier (\u20B9)</span>'+
+        '<input type="number" id="b-freight" min="0" step="1" value="'+n(d.freightINR)+'"></label>'+
+      '<div class="calc" id="b-calc"></div>'+
+      (st && st.sold > 0 ? '<div id="b-warn"></div>' : '')+
+      (!isNew && !itemsOfBatch(d.id).length && S.batches.length > 1
+        ? '<button class="btn danger" id="b-del" style="align-self:flex-start">Delete this batch</button>' : ''),
+      '<button class="btn ghost" id="b-cancel">Cancel</button>'+
+      '<button class="btn primary" id="b-save">'+(isNew?'Create batch':'Save batch')+'</button>'
+    );
+
+    function bcalc(){
+      const fr = n($("#b-freight").value), rate = n($("#b-rate").value) || n(S.rate);
+      const pcs = isNew ? 0 : st.received;
+      const each = pcs > 0 ? fr/pcs : 0;
+      $("#b-calc").innerHTML =
+        '<div><span>Pieces in this batch</span><span>'+pcs+'</span></div>'+
+        '<div><span>Freight per piece</span><span>'+(pcs ? inr(each) : "\u2014")+'</span></div>'+
+        '<div class="tot"><span>A \u0E3F100 piece lands at</span><span>'+inr(100*rate + each)+'</span></div>';
+
+      const w = $("#b-warn"); if (!w) return;
+      const oldEach = st.received > 0 ? n(d.freightINR)/st.received : 0;
+      if (fr === n(d.freightINR) && rate === n(d.rate)){ w.innerHTML = ""; return; }
+      let before = 0, after = 0;
+      const ids = {}; itemsOfBatch(d.id).forEach(function(x){ ids[x.id] = x; });
+      S.sales.forEach(function(sl){
+        const it = ids[sl.itemId]; if (!it) return;
+        before += n(sl.qty) * (n(sl.unitSellINR) - (n(it.buyTHB)*n(d.rate) + oldEach));
+        after  += n(sl.qty) * (n(sl.unitSellINR) - (n(it.buyTHB)*rate + each));
+      });
+      w.innerHTML = '<div class="banner" style="display:block;margin:0">'+
+        '<b>'+st.sold+' piece'+(st.sold>1?'s':'')+' from this batch '+(st.sold>1?'have':'has')+' already sold.</b><br>'+
+        'Saving restates '+(st.sold>1?'them':'it')+': recorded profit goes from '+inr(before)+' to '+inr(after)+'. '+
+        'The courier charge existed the day these landed \u2014 you just had not been told the number yet.'+
+        '</div>';
+    }
+    $("#b-freight").oninput = bcalc; $("#b-rate").oninput = bcalc;
+    bcalc();
+
+    $("#b-cancel").onclick = closeModal;
+    const del = $("#b-del");
+    if (del) del.onclick = function(){
+      ask("Delete "+batchShort(d)+"?", "It holds no designs, so nothing is lost.", "Delete", async function(){
+        S.batches = S.batches.filter(function(x){ return x.id !== d.id; });
+        if (view.batch === d.id) view.batch = "";
+        const ok = await save(); closeModal(); render();
+        toast(ok ? "Batch deleted" : "NOT SAVED \u2014 read the warning at the top");
+      });
+    };
+    $("#b-save").onclick = async function(){
+      const no = Math.max(1, Math.round(n($("#b-no").value)));
+      if (S.batches.some(function(x){ return x.id !== d.id && Math.round(n(x.no)) === no; })){
+        toast("Batch "+no+" already exists"); return;
+      }
+      d.no = no;
+      d.name = $("#b-name").value.trim();
+      d.date = $("#b-date").value || today();
+      d.rate = n($("#b-rate").value) || n(S.rate);
+      d.freightINR = Math.max(0, n($("#b-freight").value));
+      if (isNew){ S.batches.push(d); }
+      recountBatch(d);
+      restateBatch(d);
+      if (isNew) view.batch = d.id;
+      const ok = await save(); closeModal(); render();
+      toast(ok ? (isNew ? batchShort(d)+" created" : "Batch saved") : "NOT SAVED \u2014 read the warning at the top");
+    };
+  }
+
+  /* The full ledger for a set of designs: bought, sold, left, and what each
+     one earned. This is the screen for "where did everything go". */
+  function dataTableHTML(list, showBatch){
+    const rows = list.map(function(it){ return { it:it, st:itemStats(it) }; })
+      .sort(function(a,b){ return String(a.it.code||"").localeCompare(String(b.it.code||"")); });
+    const T = rows.reduce(function(a,r){
+      a.bought+=r.st.bought; a.sold+=r.st.sold; a.left+=r.st.left;
+      a.revenue+=r.st.revenue; a.profit+=r.st.profit; a.stockValue+=r.st.stockValue;
+      a.waiting+=r.st.waiting; return a;
+    }, {bought:0,sold:0,left:0,revenue:0,profit:0,stockValue:0,waiting:0});
+
+    const orph = orphanSales();
+    const orphProfit = orph.reduce(function(a,x){ return a + saleProfit(x); }, 0);
+
+    return '<div class="card scroll"><table class="tbl"><thead><tr>'+
+        '<th>Code</th><th>Design</th>'+(showBatch?'<th>Batch</th>':'')+
+        '<th class="num">Bought</th><th class="num">Sold</th><th class="num">Left</th>'+
+        '<th class="num">Cost each</th><th class="num">Sells at</th>'+
+        '<th class="num">Taken back</th><th class="num">Profit</th>'+
+        '<th class="num">Stock left worth</th><th>Last sold</th>'+
+      '</tr></thead><tbody>'+
+      rows.map(function(r){
+        const it = r.it, st = r.st;
+        const out = st.left <= 0 && st.bought > 0;
+        return '<tr data-row="'+it.id+'" style="cursor:pointer">'+
+          '<td class="money" style="font-size:12.5px">'+esc(it.code||"\u2014")+'</td>'+
+          '<td>'+esc(it.name)+(it.category?'<div class="muted" style="font-size:12px">'+esc(it.category)+'</div>':'')+'</td>'+
+          (showBatch?'<td class="muted" style="font-size:12.5px">'+esc(batchShort(batchOf(it)))+'</td>':'')+
+          '<td class="num">'+st.bought+'</td>'+
+          '<td class="num">'+st.sold+'</td>'+
+          '<td class="num '+(out?'neg':'')+'">'+(out?'sold out':st.left+(st.reserved?' ('+st.reserved+' held)':''))+'</td>'+
+          '<td class="num">'+inr(st.landed)+'</td>'+
+          '<td class="num">'+inr(it.sellINR)+'</td>'+
+          '<td class="num">'+inr(st.revenue)+'</td>'+
+          '<td class="num '+(st.profit>=0?'pos':'neg')+'" style="font-weight:600">'+inr(st.profit)+'</td>'+
+          '<td class="num muted">'+inr(st.stockValue)+'</td>'+
+          '<td class="money" style="font-size:12px;color:var(--ink-2)">'+(st.lastSold?esc(niceDate(st.lastSold)):"\u2014")+'</td>'+
+        '</tr>';
+      }).join("")+
+      '<tr style="background:var(--velvet);color:#fff">'+
+        '<td colspan="'+(showBatch?3:2)+'" style="color:var(--gold-2);font-weight:600">'+rows.length+' designs</td>'+
+        '<td class="num" style="color:#fff">'+T.bought+'</td>'+
+        '<td class="num" style="color:#fff">'+T.sold+'</td>'+
+        '<td class="num" style="color:#fff">'+T.left+'</td>'+
+        '<td class="num"></td><td class="num"></td>'+
+        '<td class="num" style="color:#fff">'+inr(T.revenue)+'</td>'+
+        '<td class="num" style="color:var(--gold-2);font-weight:600">'+inr(T.profit)+'</td>'+
+        '<td class="num" style="color:#A9BDB0">'+inr(T.stockValue)+'</td>'+
+        '<td></td></tr>'+
+      '</tbody></table></div>'+
+      (orph.length && showBatch
+        ? '<div class="banner" style="display:block;margin-top:12px">'+
+            '<b>'+orph.length+' sale'+(orph.length>1?'s':'')+' from designs you have since deleted.</b><br>'+
+            'They are not in any batch above, but they are still in your sales history and still in your profit: '+
+            inr(orphProfit)+'. Look under Sales to see them.</div>'
+        : '')+
+      '<div style="display:flex;gap:10px;margin-top:12px">'+
+        '<button class="btn ghost sm" id="inv-csv">Download this as CSV</button></div>';
+  }
+
+  function exportStockCSV(list, cur){
+    const head = ["Batch","Code","Design","Category","Bought","Sold","Left","Reserved",
+                  "Buy price (THB)","Rate","Freight each (INR)","Cost each (INR)","Sells at (INR)",
+                  "Taken back (INR)","Profit (INR)","Stock left worth (INR)","Last sold"];
+    const rows = list.map(function(it){
+      const st = itemStats(it), b = batchOf(it);
+      return [batchShort(b), it.code||"", it.name, it.category||"",
+              st.bought, st.sold, st.left, st.reserved,
+              n(it.buyTHB), b?n(b.rate):n(S.rate), freightEach(b).toFixed(2),
+              st.landed.toFixed(2), n(it.sellINR),
+              st.revenue.toFixed(2), st.profit.toFixed(2), st.stockValue.toFixed(2), st.lastSold];
+    });
+    const csv = [head].concat(rows).map(function(r){
+      return r.map(function(x){ return '"'+String(x==null?"":x).replace(/"/g,'""')+'"'; }).join(",");
+    }).join("\n");
+    dl((cur ? batchShort(cur).toLowerCase().replace(/\s+/g,"-") : "all-designs")+"-"+today()+".csv", csv, "text/csv");
+    toast("Downloaded");
+  }
+
+  // which batch this design came on, and what it really cost
+  function batchChipHTML(it){
+    const b = batchOf(it);
+    return '<div class="trips"><span class="triprow"><b>'+esc(batchShort(b))+'</b>'+
+      '<span>'+esc(b ? (b.name || niceDate(b.date)) : "no batch")+'</span>'+
+      '<span class="money">'+inr(landedOf(it))+'</span></span></div>';
+  }
+
   function cardHTML(it){
     const q = stockOf(it);
-    const m = marginPct(it);
-    const up = unitProfit(it);
+    const held = reservedTotal(it);
+    const free = Math.max(0, q - held);
+    const landed = landedOf(it);
+    const up = n(it.sellINR) - landed;
+    const m = n(it.sellINR) > 0 ? up / n(it.sellINR) * 100 : 0;
     const pics = photosOf(it);
     const img = pics.length ? IMG[pics[0]] : null;
-    const badge = q<=0 ? '<span class="stockbadge out">Sold out</span>'
-                : (q<=n(S.lowStock) ? '<span class="stockbadge low">'+q+' left</span>'
-                : '<span class="stockbadge">'+q+' in stock</span>');
+    const badge = (q<=0 ? '<span class="stockbadge out">Sold out</span>'
+                : (free<=0 ? '<span class="stockbadge low">all reserved</span>'
+                : (free<=n(S.lowStock) ? '<span class="stockbadge low">'+free+' free</span>'
+                : '<span class="stockbadge">'+free+' free</span>')))
+                + (held ? '<span class="stockbadge held">'+held+' reserved</span>' : '');
     return '<article class="tag">'+
       '<div class="shot" '+(pics.length?'data-gal="'+it.id+'" title="View photos"':'')+'><span class="hole"></span>'+badge+
         (img ? '<img src="'+img+'" alt="'+esc(it.name)+'">' : HANGER)+
@@ -1044,7 +1621,7 @@
         '</div>'+
         '<div>'+
           '<div class="priceline">'+
-            '<span class="buy">'+thb(it.buyTHB)+'</span>'+
+            '<span class="buy">'+inr(landed)+' landed</span>'+
             '<span class="lead"></span>'+
             '<span class="sell">'+inr(it.sellINR)+'</span>'+
           '</div>'+
@@ -1052,11 +1629,13 @@
         '</div>'+
         '<div class="sizes">'+
           ((it.variants||[]).map(function(v){
-            const qq = n(v.qty);
-            const cls = qq<=0 ? "out" : (qq<=n(S.lowStock) ? "low" : "");
-            return '<span class="sz '+cls+'"><b>'+esc(vlabel(v))+'</b><span class="q">'+qq+'</span></span>';
+            const fr = freeOf(it, v), hd = reservedOf(it.id, v.id);
+            const cls = fr<=0 ? "out" : (fr<=n(S.lowStock) ? "low" : "");
+            return '<span class="sz '+cls+'"><b>'+esc(vlabel(v))+'</b><span class="q">'+fr+'</span>'+
+              (hd ? '<span class="held">'+hd+'</span>' : '')+'</span>';
           }).join("") || '<span class="muted" style="font-size:12.5px">No sizes set</span>')+
         '</div>'+
+        batchChipHTML(it)+
         '<div class="acts">'+
           '<button class="btn primary sm" data-sell="'+it.id+'" '+(q<=0?'disabled':'')+'>Sell</button>'+
           '<button class="btn ghost sm" data-stock="'+it.id+'">Stock</button>'+
@@ -1160,7 +1739,8 @@
       (st.sales.length ? '<div><span class="eyebrow" style="display:block;margin-bottom:9px">Order history</span>'+
         '<div class="scroll"><table class="tbl"><tbody>'+st.sales.slice(0,20).map(function(x){
           return '<tr><td class="money" style="font-size:12px;color:var(--ink-2)">'+esc(niceDate(x.date))+'</td>'+
-            '<td>'+esc(x.itemName||"")+'<div class="muted" style="font-size:12px">'+esc(x.variantLabel||"")+'</div></td>'+
+            '<td>'+esc(x.itemName||"")+'<div class="muted" style="font-size:12px">'+esc(x.variantLabel||"")+
+              (saleBatch(x) ? ' \u00B7 '+esc(batchShort(saleBatch(x))) : '')+'</div></td>'+
             '<td class="num">'+inr(saleGross(x))+'</td>'+
             '<td><span class="paychip '+(x.pay||"unpaid")+'">'+esc(PAY[x.pay||"unpaid"])+'</span></td></tr>';
         }).join("")+'</tbody></table></div></div>' : '')+
@@ -1384,9 +1964,11 @@
   }
 
   /* ---------- add / edit design ---------- */
-  async function itemModal(it){
+  async function itemModal(it, forceBatchId){
     const isNew = !it;
     if (it) await ensurePhotos(it);
+    const startBatch = forceBatchId || (view.batch && batchById(view.batch) ? view.batch : null)
+                       || (batchesSorted().length ? batchesSorted()[batchesSorted().length-1].id : null);
     const d = it || { id:uid(), name:"", category:"", buyTHB:"", sellINR:"", notes:"", variants:[], createdAt:Date.now() };
     let vars = (d.variants||[]).map(function(v){ return {id:v.id||uid(), size:v.size||"", color:v.color||"", qty:n(v.qty)}; });
     if (!vars.length) vars = [{id:uid(), size:"", color:"", qty:0}];
@@ -1409,6 +1991,14 @@
         '<label class="fld"><span>Selling price (\u20B9)</span><input type="number" id="f-sell" min="0" step="0.01" value="'+esc(d.sellINR)+'" placeholder="0"></label>'+
       '</div>'+
       '<div class="calc" id="f-calc"></div>'+
+      '<label class="fld"><span>Which batch</span><select id="f-batch">'+
+        batchesSorted().map(function(b){
+          return '<option value="'+b.id+'" '+((d.batchId||startBatch)===b.id?'selected':'')+'>'+
+            esc(batchName(b)+" \u00B7 rate "+n(b.rate).toFixed(2))+'</option>';
+        }).join("")+
+        '<option value="__new">+ New batch</option>'+
+      '</select></label>'+
+      '<div id="f-newbatch"></div>'+
       '<div><span class="eyebrow" style="display:block;margin-bottom:9px">Sizes &amp; quantity</span>'+
         '<div id="vlist" style="display:flex;flex-direction:column;gap:8px"></div>'+
         '<div class="row" style="margin-top:10px">'+
@@ -1487,13 +2077,36 @@
     }
     function drawCalc(){
       const b = n($("#f-buy").value), s = n($("#f-sell").value);
-      const c = b*n(S.rate), p = s-c, m = s>0 ? p/s*100 : 0;
+      const sel = $("#f-batch");
+      let useRate = n(S.rate), fr = 0;
+      if (sel && sel.value === "__new"){
+        const r = $("#f-brate"); useRate = n(r ? r.value : S.rate) || n(S.rate);
+      } else if (sel){
+        const bb = batchById(sel.value);
+        if (bb){ useRate = n(bb.rate); fr = freightEach(bb); }
+      }
+      const c = b*useRate + fr, p = s-c, m = s>0 ? p/s*100 : 0;
       $("#f-calc").innerHTML =
-        '<div><span>Cost in rupees</span><span>'+thb(b)+' \u00D7 '+n(S.rate).toFixed(2)+' = '+inr(c)+'</span></div>'+
+        '<div><span>Cost in rupees</span><span>'+thb(b)+' \u00D7 '+useRate.toFixed(2)+(fr?' + '+inr(fr):'')+' = '+inr(c)+'</span></div>'+
         '<div><span>Selling price</span><span>'+inr(s)+'</span></div>'+
         '<div class="tot"><span>Profit per piece</span><span class="'+(p>=0?'pos':'neg')+'">'+(p>=0?'+':'')+inr(p)+' \u00B7 '+m.toFixed(0)+'%</span></div>';
     }
-    drawPics(); drawVars(); drawCalc();
+    function drawNewBatch(){
+      const sel = $("#f-batch");
+      $("#f-newbatch").innerHTML = sel.value === "__new"
+        ? '<div class="row" style="margin-top:11px">'+
+            '<label class="fld"><span>Bought on</span><input type="date" id="f-bdate" value="'+today()+'"></label>'+
+            '<label class="fld" style="flex:0 0 130px"><span>Rate paid</span>'+
+              '<input type="number" id="f-brate" step="0.01" min="0" value="'+n(S.rate)+'"></label>'+
+            '<label class="fld"><span>Call it</span><input type="text" id="f-bname" placeholder="Pratunam\u2026"></label>'+
+          '</div>'
+        : "";
+      const r = $("#f-brate"); if (r) r.oninput = drawCalc;
+      drawCalc();
+    }
+    drawPics(); drawVars();
+    $("#f-batch").onchange = drawNewBatch;
+    drawNewBatch();
     $("#f-buy").oninput = drawCalc;
     $("#f-sell").oninput = drawCalc;
     $("#v-add").onclick = function(){ vars.push({id:uid(),size:"",color:"",qty:0}); drawVars(); };
@@ -1521,8 +2134,14 @@
       else if (isNew && codeNum(code) === peekNextCode()) S.nextCode = peekNextCode() + 1;
       const clean = vars.filter(function(v){ return v.size || v.color || n(v.qty)>0; })
         .map(function(v){ return {id:v.id, size:v.size.trim(), color:v.color.trim(), qty:Math.max(0, Math.round(n(v.qty)))}; });
+      let bsel = $("#f-batch").value, batch = null;
+      if (bsel === "__new"){
+        batch = newBatch($("#f-bname").value, $("#f-bdate").value, n($("#f-brate").value));
+      } else { batch = batchById(bsel); }
+      if (!batch){ toast("Pick a batch for this design"); return; }
+
       const rec = {
-        id:d.id, code:code, name:name, category:$("#f-cat").value.trim(),
+        id:d.id, batchId: batch.id, code:code, name:name, category:$("#f-cat").value.trim(),
         buyTHB:n($("#f-buy").value), sellINR:n($("#f-sell").value),
         notes:$("#f-notes").value.trim(),
         variants: clean.length ? clean : [{id:uid(), size:"", color:"", qty:0}],
@@ -1530,7 +2149,11 @@
         createdAt: d.createdAt || Date.now()
       };
       const idx = S.items.findIndex(function(i){ return i.id===d.id; });
+      const oldBatch = idx>=0 ? batchOf(S.items[idx]) : null;
       if (idx>=0) S.items[idx] = rec; else S.items.push(rec);
+      recountBatch(batch);
+      if (oldBatch && oldBatch.id !== batch.id) recountBatch(oldBatch);
+      releaseOpenPrebooks(rec);
       // write photos one at a time and keep only the ones that provably landed
       let lostNow = 0;
       for (let i = 0; i < pics.length; i++){
@@ -1553,15 +2176,20 @@
   /* ---------- record a sale ---------- */
   function sellModal(it){
     if (!it) return;
-    const avail = (it.variants||[]).filter(function(v){ return n(v.qty)>0; });
-    if (!avail.length){ toast("Nothing left in stock for this design"); return; }
+    const avail = (it.variants||[]).filter(function(v){ return freeOf(it, v) > 0; });
+    if (!avail.length){
+      toast(stockOf(it) > 0 ? "Every piece left is reserved for a pre-book" : "Nothing left in stock for this design");
+      return;
+    }
     let vid = avail[0].id;
 
     modal("Sell \u00B7 "+it.name,
       '<div><span class="eyebrow" style="display:block;margin-bottom:9px">Which size</span>'+
         '<div class="pick" id="s-pick">'+ (it.variants||[]).map(function(v){
-          return '<button data-v="'+v.id+'" '+(n(v.qty)<=0?'disabled':'')+' class="'+(v.id===vid?'on':'')+'">'+
-            esc(vlabel(v))+' <span style="opacity:.55">'+n(v.qty)+'</span></button>';
+          const free = freeOf(it, v), held = reservedOf(it.id, v.id);
+          return '<button data-v="'+v.id+'" '+(free<=0?'disabled':'')+' class="'+(v.id===vid?'on':'')+'">'+
+            esc(vlabel(v))+' <span style="opacity:.55">'+free+'</span>'+
+            (held ? ' <span style="color:var(--marigold)">+'+held+' held</span>' : '')+'</button>';
         }).join("") +'</div></div>'+
       '<div class="row">'+
         '<label class="fld"><span>Quantity</span><input type="number" id="s-qty" min="1" step="1" value="1"></label>'+
@@ -1587,16 +2215,18 @@
 
     function cur(){ return (it.variants||[]).find(function(v){ return v.id===vid; }); }
     function calc(){
+      const v = cur();
       const q = Math.max(1, Math.round(n($("#s-qty").value)));
       const p = n($("#s-price").value);
-      const c = costINR(it.buyTHB, S.rate);
-      const rev = q*p, cost = q*c, pr = rev-cost;
-      const left = n(cur().qty) - q;
+      const each = landedOf(it), cost = q*each;
+      const rev = q*p, pr = rev - cost;
+      const left = freeOf(it, v) - q;
+      const bb = batchOf(it);
       $("#s-calc").innerHTML =
         '<div><span>Money in</span><span>'+q+' \u00D7 '+inr(p)+' = '+inr(rev)+'</span></div>'+
-        '<div><span>Cost of goods</span><span>'+q+' \u00D7 '+inr(c)+' = '+inr(cost)+'</span></div>'+
+        '<div><span>Cost of goods \u00B7 '+esc(batchShort(bb))+'</span><span>'+q+' \u00D7 '+inr(each)+' = '+inr(cost)+'</span></div>'+
         '<div class="tot"><span>Profit</span><span class="'+(pr>=0?'pos':'neg')+'">'+(pr>=0?'+':'')+inr(pr)+'</span></div>'+
-        '<div style="font-size:12px"><span>Stock left after this</span><span class="'+(left<0?'neg':'')+'">'+left+'</span></div>';
+        '<div style="font-size:12px"><span>Free stock after this</span><span class="'+(left<0?'neg':'')+'">'+left+'</span></div>';
     }
     $("#s-pick").querySelectorAll("button").forEach(function(b){
       b.onclick = function(){
@@ -1633,13 +2263,20 @@
       const v = cur();
       const q = Math.round(n($("#s-qty").value));
       if (q < 1){ toast("Quantity must be at least 1"); return; }
-      if (q > n(v.qty)){ toast("Only "+n(v.qty)+" left in that size"); return; }
+      const free = freeOf(it, v);
+      if (q > free){
+        toast(free <= 0 ? "Every piece in that size is reserved" : "Only "+free+" free in that size");
+        return;
+      }
       v.qty = n(v.qty) - q;
       S.sales.push({
         id: uid(), itemId: it.id, itemCode: it.code, itemName: it.name, variantId: v.id, variantLabel: vlabel(v),
         qty: q, unitSellINR: n($("#s-price").value),
         buyTHB: n(it.buyTHB),
         rate: n(S.rate),
+        landedINR: landedOf(it),            // the true cost of this design, frozen
+        batchId: it.batchId,
+        batchLabel: batchShort(batchOf(it)),
         date: $("#s-date").value || today(),
         ship: "pending", courier: "", tracking: "",
         shipCost: 0, shipCharged: 0,
@@ -1681,9 +2318,9 @@
         }).join("") +'</div></div>'+
       '<div class="row">'+
         '<label class="fld"><span>Pieces received</span><input type="number" id="k-qty" min="1" step="1" value="1"></label>'+
-        '<label class="fld"><span>New buying price (\u0E3F)</span><input type="number" id="k-buy" min="0" step="0.01" value="'+n(it.buyTHB)+'"></label>'+
+        '<label class="fld"><span>Price each (\u0E3F)</span><input type="number" id="k-buy" min="0" step="0.01" value="'+n(it.buyTHB)+'"></label>'+
       '</div>'+
-      '<p style="margin:0;font-size:12.5px;color:var(--ink-3);line-height:1.55">Changing the buying price affects this design from now on. Sales already recorded keep the cost they were sold at.</p>',
+      '<div class="calc" id="k-calc"></div>',
       '<button class="btn ghost" id="k-cancel">Cancel</button><button class="btn primary" id="k-ok">Add stock</button>'
     );
     $("#k-pick").querySelectorAll("button").forEach(function(b){
@@ -1692,6 +2329,20 @@
         $("#k-pick").querySelectorAll("button").forEach(function(x){ x.classList.toggle("on", x.dataset.v===vid); });
       };
     });
+    function kcalc(){
+      const q = Math.max(1, Math.round(n($("#k-qty").value)));
+      const b = n($("#k-buy").value);
+      const bb = batchOf(it);
+      const rate = bb ? n(bb.rate) : n(S.rate), fr = freightEach(bb);
+      $("#k-calc").innerHTML =
+        '<div><span>Batch</span><span>'+esc(batchName(bb))+'</span></div>'+
+        '<div><span>Goods</span><span>'+q+' \u00D7 '+thb(b)+' = '+thb(q*b)+'</span></div>'+
+        '<div><span>At this batch\u2019s rate</span><span>\u00D7 '+rate.toFixed(2)+' = '+inr(q*b*rate)+'</span></div>'+
+        (fr ? '<div><span>Freight share</span><span>+ '+inr(fr)+' each</span></div>'
+            : '<div style="font-size:12px;color:var(--marigold)"><span>Freight not billed yet</span><span>add it on the batch</span></div>')+
+        '<div class="tot"><span>Cost each, landed</span><span>'+inr(b*rate+fr)+'</span></div>';
+    }
+    $("#k-qty").oninput = kcalc; $("#k-buy").oninput = kcalc;
     $("#k-cancel").onclick = closeModal;
     $("#k-ok").onclick = async function(){
       const v = (it.variants||[]).find(function(x){ return x.id===vid; });
@@ -1699,9 +2350,405 @@
       if (!v || q<1){ toast("Enter how many pieces you received"); return; }
       v.qty = n(v.qty) + q;
       it.buyTHB = n($("#k-buy").value);
+      recountBatch(batchOf(it));
+      const freed = releaseOpenPrebooks(it);
       const ok = await save(); closeModal(); render();
-      toast(ok ? q+" added to "+vlabel(v) : "NOT SAVED \u2014 read the warning at the top");
+      toast(ok ? q+" added to "+vlabel(v) + (freed ? " \u00B7 "+freed+" pre-book"+(freed>1?"s":"")+" now reserved" : "")
+               : "NOT SAVED \u2014 read the warning at the top");
     };
+  }
+
+  /* ---------- what to buy next trip ----------
+     Two honest reasons to buy: someone is already waiting for it, or it keeps
+     selling and is running out. Everything else is a hunch. */
+  function soldSince(itemId, days){
+    const cut = new Date(Date.now() - days*86400000).toISOString().slice(0,10);
+    return S.sales.filter(function(x){ return x.itemId===itemId && String(x.date||"") >= cut; })
+      .reduce(function(a,x){ return a + n(x.qty); }, 0);
+  }
+  function buyList(){
+    const owed = [], low = [];
+    S.prebooks.filter(function(p){ return p.status==="open"; }).forEach(function(p){
+      const it = byId(p.itemId);
+      owed.push({ code:p.itemCode||"", name:p.itemName||"", label:p.variantLabel||"",
+                  qty:n(p.qty), unitTHB: it ? n(it.buyTHB) : 0,
+                  who:p.custName||"", revenue:pbGross(p) });
+    });
+    S.items.forEach(function(it){
+      const free = (it.variants||[]).reduce(function(a,v){ return a + freeOf(it, v); }, 0);
+      if (free > n(S.lowStock)) return;
+      const moved = soldSince(it.id, 56);
+      if (moved <= 0) return;
+      const want = Math.max(2, moved) - free;
+      if (want <= 0) return;
+      low.push({ code:it.code||"", name:it.name, free:free, moved:moved,
+                 qty:want, unitTHB:n(it.buyTHB), margin: n(it.sellINR) - landedOf(it) });
+    });
+    const owedTHB = owed.reduce(function(a,o){ return a + o.qty*o.unitTHB; }, 0);
+    const lowTHB  = low.reduce(function(a,o){ return a + o.qty*o.unitTHB; }, 0);
+    const pcs = owed.concat(low).reduce(function(a,o){ return a+o.qty; }, 0);
+    return { owed:owed, low:low, owedTHB:owedTHB, lowTHB:lowTHB, pcs:pcs,
+             revenue: owed.reduce(function(a,o){ return a+o.revenue; }, 0) };
+  }
+  function avgFreightEach(){
+    const billed = S.batches.filter(function(b){ return n(b.freightINR) > 0 && n(b.pieces) > 0; });
+    if (!billed.length) return 0;
+    return billed.reduce(function(a,b){ return a + freightEach(b); }, 0) / billed.length;
+  }
+  function buyListHTML(){
+    const bl = buyList();
+    if (!bl.owed.length && !bl.low.length) return "";
+    const totalTHB = bl.owedTHB + bl.lowTHB;
+    const freightGuess = bl.pcs * avgFreightEach();
+    const cost = totalTHB*n(S.rate) + freightGuess;
+    return '<h2 class="sec">Take this to Bangkok <span class="cnt">'+bl.pcs+' pieces</span></h2>'+
+      '<div class="card" style="overflow:hidden;margin-bottom:12px">'+
+        (bl.owed.length ?
+          '<div style="background:var(--teal-soft);padding:12px 16px;display:flex;align-items:center;gap:10px">'+
+            '<span style="font-size:13.5px;font-weight:600;color:var(--teal)">Already sold \u2014 buy these first</span>'+
+            '<span style="flex:1"></span><span class="money" style="font-size:12.5px;color:var(--teal)">'+thb(bl.owedTHB)+'</span></div>'+
+          '<div class="scroll"><table class="tbl"><tbody>'+
+          bl.owed.map(function(o){
+            return '<tr><td>'+esc(o.name)+'<div class="muted" style="font-size:12px">'+esc((o.code?o.code+" \u00B7 ":"")+o.label)+'</div></td>'+
+              '<td class="muted" style="font-size:13px">'+esc(o.who)+'</td>'+
+              '<td class="num" style="font-weight:600">'+o.qty+'</td>'+
+              '<td class="num">'+thb(o.unitTHB)+'</td>'+
+              '<td class="num pos">sold '+inr(o.revenue)+'</td></tr>';
+          }).join("")+'</tbody></table></div>' : '')+
+        (bl.low.length ?
+          '<div style="background:var(--marigold-soft);padding:12px 16px;display:flex;align-items:center;gap:10px;'+
+            (bl.owed.length?'border-top:1px solid var(--line)':'')+'">'+
+            '<span style="font-size:13.5px;font-weight:600;color:var(--marigold)">Running low \u2014 and it sells</span>'+
+            '<span style="flex:1"></span><span class="money" style="font-size:12.5px;color:var(--marigold)">'+thb(bl.lowTHB)+'</span></div>'+
+          '<div class="scroll"><table class="tbl"><tbody>'+
+          bl.low.map(function(o){
+            return '<tr><td>'+esc(o.name)+'<div class="muted" style="font-size:12px">'+esc(o.code)+' \u00B7 '+o.free+' free</div></td>'+
+              '<td class="muted" style="font-size:13px">'+o.moved+' sold in 8 wks</td>'+
+              '<td class="num" style="font-weight:600">'+o.qty+'</td>'+
+              '<td class="num">'+thb(o.unitTHB)+'</td>'+
+              '<td class="num muted">'+inr(o.margin)+' each</td></tr>';
+          }).join("")+'</tbody></table></div>' : '')+
+      '</div>'+
+      '<div class="kpis" style="margin-bottom:10px">'+
+        kpi("Cash to carry", thb(totalTHB), bl.pcs+" pieces at today\u2019s prices", "", "accent")+
+        kpi("Next batch will cost", inr(cost), "goods "+inr(totalTHB*n(S.rate))+(freightGuess?" + freight "+inr(freightGuess):""))+
+        kpi("Already covered", inr(bl.revenue), cost>0 ? Math.round(bl.revenue/cost*100)+"% sold before you board" : "",
+            bl.revenue>0?"pos":"", "tint")+
+      '</div>'+
+      '<div style="display:flex;gap:10px;margin-bottom:22px"><button class="btn ghost sm" id="bl-copy">Copy the list</button></div>';
+  }
+  function wireBuyList(el){
+    const btn = el.querySelector("#bl-copy");
+    if (!btn) return;
+    btn.onclick = function(){
+      const bl = buyList();
+      const lines = ["DHA Label \u2014 buy list \u00B7 " + niceDate(today()), ""];
+      if (bl.owed.length){
+        lines.push("ALREADY SOLD:");
+        bl.owed.forEach(function(o){ lines.push("  "+o.qty+" \u00D7 "+(o.code?o.code+" ":"")+o.name+(o.label?" ("+o.label+")":"")+" \u2014 "+o.who); });
+        lines.push("");
+      }
+      if (bl.low.length){
+        lines.push("RUNNING LOW:");
+        bl.low.forEach(function(o){ lines.push("  "+o.qty+" \u00D7 "+(o.code?o.code+" ":"")+o.name); });
+        lines.push("");
+      }
+      lines.push("Cash needed: " + thb(bl.owedTHB + bl.lowTHB));
+      copyText(lines.join("\n"));
+    };
+  }
+
+  /* ---------- pre-books ---------- */
+  function renderPB(){
+    const el = $("#p-pb");
+    const live = S.prebooks.filter(function(p){ return p.status==="open" || p.status==="reserved"; });
+    if (!S.prebooks.length){
+      el.innerHTML = '<div class="card empty"><h3>No pre-books yet</h3>'+
+        '<p>A pre-book is a promise, not a sale. Take one when someone commits to a piece \u2014 whether it is on the rail or still a photo from Bangkok.</p>'+
+        '<button class="btn primary" id="pb-first">Take a pre-book</button></div>';
+      $("#pb-first").onclick = function(){ pbModal(null); };
+      return;
+    }
+    let list = S.prebooks.slice().sort(function(a,b){
+      const rank = { open:0, reserved:1, done:2, cancelled:3 };
+      const d = (rank[a.status]||0) - (rank[b.status]||0);
+      return d !== 0 ? d : String(b.date||"").localeCompare(String(a.date||""));
+    });
+    if (view.pbf) list = list.filter(function(p){ return p.status===view.pbf; });
+
+    const committed = live.reduce(function(a,p){ return a + pbGross(p); }, 0);
+    const pieces = live.reduce(function(a,p){ return a + n(p.qty); }, 0);
+    const ready = S.prebooks.filter(function(p){ return p.status==="reserved"; }).length;
+
+    el.innerHTML =
+      buyListHTML()+
+      '<div class="toolbar">'+
+        '<select id="pbf" style="flex:0 1 190px"><option value="">All pre-books</option>'+
+          Object.keys(PB).map(function(k){
+            return '<option value="'+k+'" '+(view.pbf===k?'selected':'')+'>'+PB[k]+'</option>';
+          }).join("")+'</select>'+
+        '<div class="grow"></div>'+
+        '<button class="btn primary" id="pb-add" style="flex:0 0 auto">+ Take a pre-book</button>'+
+      '</div>'+
+      '<div class="kpis" style="margin-bottom:20px">'+
+        kpi("Open promises", String(live.length), pieces+" piece"+(pieces===1?"":"s")+" owed")+
+        kpi("Value committed", inr(committed), "sold before it is bought", "", "accent")+
+        kpi("Advances held", inr(advancesHeld()), "owed in goods, not profit", advancesHeld()>0?"neg":"", "tint")+
+        kpi("Reserved on the rail", String(ready), "stock is here, waiting")+
+      '</div>'+
+      '<div class="card scroll"><table class="tbl"><thead><tr>'+
+        '<th>Customer</th><th>Design</th><th class="num">Qty</th><th class="num">Agreed</th>'+
+        '<th class="num">Advance</th><th>Stage</th><th></th>'+
+      '</tr></thead><tbody>'+
+      (list.length ? list.map(function(p){
+        const cls = p.status==="reserved" ? "paid" : (p.status==="open" ? "partial" : "unpaid");
+        return '<tr>'+
+          '<td>'+esc(p.custName||"\u2014")+
+            '<div class="money" style="font-size:11.5px;color:var(--ink-3)">'+esc(p.code||"")+'</div></td>'+
+          '<td>'+esc(p.itemName||"\u2014")+
+            '<div class="muted" style="font-size:12px">'+esc((p.itemCode?p.itemCode+" \u00B7 ":"")+(p.variantLabel||""))+
+            (byId(p.itemId) ? ' \u00B7 '+esc(batchShort(batchOf(byId(p.itemId)))) : '')+'</div></td>'+
+          '<td class="num">'+n(p.qty)+'</td>'+
+          '<td class="num">'+inr(pbGross(p))+'</td>'+
+          '<td class="num '+(n(p.advance)?'pos':'muted')+'">'+(n(p.advance)?inr(p.advance):"none")+'</td>'+
+          '<td><span class="paychip '+cls+'">'+esc(PB[p.status]||p.status)+'</span></td>'+
+          '<td style="text-align:right">'+
+            (p.status==="reserved" ? '<button class="btn primary sm" data-pbship="'+p.id+'">Ship it</button> ' : '')+
+            (p.status==="done" ? '' : '<button class="btn ghost sm" data-pbedit="'+p.id+'">Open</button>')+
+          '</td></tr>';
+      }).join("") : '<tr><td colspan="7" class="muted" style="text-align:center;padding:30px">Nothing at that stage</td></tr>')+
+      '</tbody></table></div>'+
+      '<div class="card" style="padding:18px;margin-top:16px;font-size:13.5px;line-height:1.6;color:var(--ink-2)">'+
+        '<b style="color:var(--ink)">An advance is not income.</b> Until the dress ships, that money belongs to the customer, '+
+        'so it is counted here and never in your sales or profit. It carries over as part-payment the moment you press Ship it.'+
+      '</div>';
+
+    wireBuyList(el);
+    $("#pbf").onchange = function(e){ view.pbf = e.target.value; renderPB(); };
+    $("#pb-add").onclick = function(){ pbModal(null); };
+    el.querySelectorAll("[data-pbedit]").forEach(function(b){
+      b.onclick = function(){ pbModal(S.prebooks.find(function(x){ return x.id===b.dataset.pbedit; })); };
+    });
+    el.querySelectorAll("[data-pbship]").forEach(function(b){
+      b.onclick = function(){ pbShip(S.prebooks.find(function(x){ return x.id===b.dataset.pbship; })); };
+    });
+  }
+
+  function pbModal(p){
+    const isNew = !p;
+    const d = p || { id:uid(), code:"", date:today(), qty:1, priceINR:0, advance:0, status:"open", note:"" };
+    let mode = (isNew || !d.itemId) ? "have" : "have";
+
+    modal(isNew ? "Take a pre-book" : "Pre-book "+(d.code||""),
+      '<label class="fld"><span>Customer</span><select id="pb-cust">'+
+        '<option value="">Choose\u2026</option>'+
+        S.customers.slice().sort(function(a,b){ return a.name.localeCompare(b.name); }).map(function(c){
+          return '<option value="'+c.id+'" '+(d.customerId===c.id?'selected':'')+'>'+esc(c.name+(c.phone?" \u00B7 "+c.phone:""))+'</option>';
+        }).join("")+
+        '<option value="__new" '+(!d.customerId&&!isNew?'selected':'')+'>+ New customer</option>'+
+      '</select></label>'+
+      '<div id="pb-cbox"></div>'+
+      '<div><span class="eyebrow" style="display:block;margin-bottom:9px">What are they buying</span>'+
+        '<div class="pick" id="pb-mode">'+
+          '<button data-m="have" class="on">A design I already have</button>'+
+          '<button data-m="new">Something new</button>'+
+        '</div></div>'+
+      '<div id="pb-what"></div>'+
+      '<div class="row">'+
+        '<label class="fld" style="flex:0 0 110px"><span>Qty</span>'+
+          '<input type="number" id="pb-qty" min="1" step="1" value="'+n(d.qty)+'"></label>'+
+        '<label class="fld"><span>Price each (\u20B9)</span>'+
+          '<input type="number" id="pb-price" min="0" step="1" value="'+n(d.priceINR)+'"></label>'+
+        '<label class="fld"><span>Advance taken (\u20B9)</span>'+
+          '<input type="number" id="pb-adv" min="0" step="1" value="'+n(d.advance)+'"></label>'+
+      '</div>'+
+      '<label class="fld"><span>Note</span><input type="text" id="pb-note" value="'+esc(d.note||"")+'" placeholder="Wants it before Onam\u2026"></label>'+
+      '<div class="calc" id="pb-calc"></div>'+
+      (isNew ? '' : '<button class="btn danger" id="pb-cancel-book" style="align-self:flex-start">Cancel this pre-book</button>'),
+      '<button class="btn ghost" id="pb-close">Cancel</button><button class="btn primary" id="pb-save">'+(isNew?'Save pre-book':'Save changes')+'</button>'
+    );
+
+    function drawCust(){
+      const v = $("#pb-cust").value, box = $("#pb-cbox");
+      box.innerHTML = v === "__new"
+        ? '<div class="row"><label class="fld"><span>Name</span><input type="text" id="pb-cname" placeholder="Customer name"></label>'+
+          '<label class="fld"><span>Phone</span><input type="text" id="pb-cphone" placeholder="+91\u2026"></label></div>'
+        : "";
+    }
+    function drawWhat(){
+      const box = $("#pb-what");
+      if (mode === "new"){
+        box.innerHTML =
+          '<div class="row">'+
+            '<label class="fld"><span>What is it</span><input type="text" id="pb-nname" value="'+esc(d.itemName||"")+'" placeholder="Green floral midi"></label>'+
+            '<label class="fld" style="flex:0 0 150px"><span>Expected cost (\u0E3F)</span>'+
+              '<input type="number" id="pb-nbuy" min="0" step="1" value="0"></label>'+
+          '</div>'+
+          '<label class="fld" style="margin-top:10px"><span>Size \u00B7 colour</span>'+
+            '<input type="text" id="pb-nvar" value="'+esc(d.variantLabel||"")+'" placeholder="Free Size / green"></label>'+
+          '<p style="margin:9px 0 0;font-size:12.5px;color:var(--ink-3);line-height:1.5">A design opens at the next code with no stock, so the promise has something to point at. It fills up when you receive the trip.</p>';
+      } else {
+        const opts = S.items.slice().sort(function(a,b){ return String(a.code||"").localeCompare(String(b.code||"")); });
+        box.innerHTML =
+          '<label class="fld"><span>Design</span><select id="pb-item">'+
+            '<option value="">Choose\u2026</option>'+
+            opts.map(function(it){
+              return '<option value="'+it.id+'" '+(d.itemId===it.id?'selected':'')+'>'+esc((it.code?it.code+" \u00B7 ":"")+it.name)+'</option>';
+            }).join("")+
+          '</select></label>'+
+          '<label class="fld" style="margin-top:10px"><span>Size \u00B7 colour</span><select id="pb-var"></select></label>';
+        $("#pb-item").onchange = function(){ drawVars(); pcalc(); };
+        drawVars();
+      }
+    }
+    function drawVars(){
+      const sel = $("#pb-var"); if (!sel) return;
+      const it = byId($("#pb-item").value);
+      if (!it){ sel.innerHTML = '<option value="">\u2014</option>'; return; }
+      sel.innerHTML = (it.variants||[]).map(function(v){
+        const free = freeOf(it, v);
+        return '<option value="'+v.id+'" '+(d.variantId===v.id?'selected':'')+'>'+
+          esc(vlabel(v))+' \u2014 '+free+' free'+(reservedOf(it.id,v.id)?', '+reservedOf(it.id,v.id)+' held':'')+'</option>';
+      }).join("");
+      sel.onchange = pcalc;
+      if (!n(d.priceINR) && $("#pb-price")) $("#pb-price").value = n(it.sellINR);
+    }
+    function pcalc(){
+      const q = Math.max(1, Math.round(n($("#pb-qty").value)));
+      const price = n($("#pb-price").value), adv = n($("#pb-adv").value);
+      const gross = q * price, due = Math.max(0, gross - adv);
+      let stockLine = "";
+      if (mode === "have"){
+        const it = byId($("#pb-item") ? $("#pb-item").value : "");
+        const v = it ? (it.variants||[]).find(function(x){ return x.id === ($("#pb-var")||{}).value; }) : null;
+        if (it && v){
+          const free = freeOf(it, v);
+          stockLine = free >= q
+            ? '<div style="font-size:12px"><span>Reserves now</span><span class="pos">'+q+' of '+free+' free</span></div>'
+            : '<div style="font-size:12px"><span>Not enough on the rail</span><span class="neg">goes on the buy list</span></div>';
+        }
+      } else {
+        stockLine = '<div style="font-size:12px"><span>Nothing in stock</span><span>goes on the buy list</span></div>';
+      }
+      $("#pb-calc").innerHTML =
+        '<div><span>Promised</span><span>'+q+' \u00D7 '+inr(price)+' = '+inr(gross)+'</span></div>'+
+        '<div><span>Advance received</span><span>'+inr(adv)+'</span></div>'+
+        '<div class="tot"><span>Due on delivery</span><span>'+inr(due)+'</span></div>'+
+        stockLine;
+    }
+
+    $("#pb-cust").onchange = drawCust;
+    $("#pb-mode").querySelectorAll("button").forEach(function(b){
+      b.onclick = function(){
+        mode = b.dataset.m;
+        $("#pb-mode").querySelectorAll("button").forEach(function(x){ x.classList.toggle("on", x.dataset.m===mode); });
+        drawWhat(); pcalc();
+      };
+    });
+    ["pb-qty","pb-price","pb-adv"].forEach(function(id){ $("#"+id).oninput = pcalc; });
+    drawCust(); drawWhat(); pcalc();
+
+    $("#pb-close").onclick = closeModal;
+    if (!isNew) $("#pb-cancel-book").onclick = function(){
+      ask("Cancel this pre-book?",
+        n(d.advance) ? "The piece is released back to free stock. The "+inr(d.advance)+" advance stays recorded against this pre-book so you can see what to refund."
+                     : "The piece is released back to free stock.",
+        "Cancel pre-book", async function(){
+          d.status = "cancelled";
+          const ok = await save(); closeModal(); render();
+          toast(ok ? "Pre-book cancelled" : "NOT SAVED \u2014 read the warning at the top");
+        });
+    };
+
+    $("#pb-save").onclick = async function(){
+      const custSel = $("#pb-cust").value;
+      let cust = null;
+      if (custSel === "__new"){
+        const nm = ($("#pb-cname").value||"").trim();
+        if (!nm){ toast("Give the customer a name"); return; }
+        cust = { id:uid(), name:nm, phone:($("#pb-cphone").value||"").trim(),
+                 address:"", city:"", state:"", pincode:"", createdAt:Date.now() };
+        S.customers.push(cust);
+      } else if (custSel){ cust = custById(custSel); }
+      if (!cust){ toast("Choose who this is for"); return; }
+
+      let it = null, v = null;
+      if (mode === "new"){
+        const nm = ($("#pb-nname").value||"").trim();
+        if (!nm){ toast("What is it they want?"); return; }
+        const label = ($("#pb-nvar").value||"").trim();
+        const parts = label.split("/");
+        it = { id:uid(), code:takeCode(), name:nm, category:"",
+               buyTHB:n($("#pb-nbuy").value), sellINR:n($("#pb-price").value), notes:"",
+               variants:[{ id:uid(), size:(parts[0]||"").trim(), color:(parts[1]||"").trim(), qty:0, lots:[] }],
+               photos:[], createdAt:Date.now() };
+        S.items.push(it);
+        v = it.variants[0];
+      } else {
+        it = byId($("#pb-item").value);
+        v = it ? (it.variants||[]).find(function(x){ return x.id === $("#pb-var").value; }) : null;
+        if (!it || !v){ toast("Pick a design and a size"); return; }
+      }
+
+      const q = Math.max(1, Math.round(n($("#pb-qty").value)));
+      const held = (!isNew && d.status === "reserved" && d.itemId === it.id && d.variantId === v.id) ? n(d.qty) : 0;
+      const canHold = freeOf(it, v) + held >= q;
+
+      Object.assign(d, {
+        code: d.code || takePBCode(),
+        date: d.date || today(),
+        customerId: cust.id, custName: cust.name, custPhone: cust.phone,
+        itemId: it.id, itemCode: it.code, itemName: it.name,
+        variantId: v.id, variantLabel: vlabel(v),
+        qty: q, priceINR: n($("#pb-price").value), advance: n($("#pb-adv").value),
+        note: ($("#pb-note").value||"").trim(),
+        status: (d.status === "done" || d.status === "cancelled") ? d.status : (canHold ? "reserved" : "open"),
+        createdAt: d.createdAt || Date.now()
+      });
+      if (isNew) S.prebooks.push(d);
+
+      const ok = await save(); closeModal(); render();
+      toast(ok ? (d.status === "reserved" ? "Reserved \u00B7 "+q+" held for "+cust.name : "Added to the buy list")
+               : "NOT SAVED \u2014 read the warning at the top");
+    };
+  }
+
+  /* Turn a reservation into a real sale: the pieces leave the rail at their
+     true cost, and the advance carries over as money already received. */
+  function pbShip(p){
+    if (!p) return;
+    const it = byId(p.itemId);
+    const v = it ? (it.variants||[]).find(function(x){ return x.id===p.variantId; }) : null;
+    if (!it || !v){ toast("That design is no longer here"); return; }
+    const q = Math.round(n(p.qty));
+    if (n(v.qty) < q){ toast("Only "+n(v.qty)+" on the rail \u2014 add stock first"); return; }
+
+    const gross = pbGross(p), adv = n(p.advance);
+    ask("Ship "+p.code+"?",
+      q+" \u00D7 "+it.name+" to "+p.custName+" for "+inr(gross)+". "+
+      (adv ? inr(adv)+" already received, "+inr(Math.max(0, gross-adv))+" due on delivery." : "Nothing received yet."),
+      "Record the sale", async function(){
+        v.qty = n(v.qty) - q;
+        const c = custById(p.customerId);
+        S.sales.push({
+          id: uid(), itemId: it.id, itemCode: it.code, itemName: it.name,
+          variantId: v.id, variantLabel: vlabel(v),
+          qty: q, unitSellINR: n(p.priceINR),
+          buyTHB: n(it.buyTHB), rate: n(S.rate),
+          landedINR: landedOf(it), batchId: it.batchId, batchLabel: batchShort(batchOf(it)),
+          date: today(), ship: "pending", courier: "", tracking: "",
+          shipCost: 0, shipCharged: 0,
+          pay: adv >= gross ? "paid" : (adv > 0 ? "partial" : "unpaid"),
+          paid: adv, payMethod: "",
+          customerId: p.customerId, custName: p.custName, custPhone: p.custPhone,
+          custAddr: c ? addrLines(c) : "",
+          fromPrebook: p.code
+        });
+        p.status = "done";
+        p.saleId = S.sales[S.sales.length-1].id;
+        const ok = await save(); render();
+        toast(ok ? "Sold \u00B7 now sitting in Parcels to pack" : "NOT SAVED \u2014 read the warning at the top");
+      });
   }
 
   /* ---------- sales ---------- */
@@ -1718,6 +2765,8 @@
     let list = S.sales.slice().sort(function(a,b){ return (b.date||"").localeCompare(a.date||"") || (b.id>a.id?1:-1); });
     if (view.month) list = list.filter(function(s){ return ym(s.date)===view.month; });
     if (view.ship) list = list.filter(function(s){ return (s.ship||"pending")===view.ship; });
+    if (view.sbatch === "__none") list = list.filter(function(s){ return !saleBatch(s); });
+    else if (view.sbatch) list = list.filter(function(s){ const b = saleBatch(s); return b && b.id === view.sbatch; });
 
     const rev = list.reduce(function(a,s){ return a + n(s.qty)*n(s.unitSellINR); }, 0);
     const pro = list.reduce(function(a,s){ return a + saleProfit(s); }, 0);
@@ -1731,6 +2780,12 @@
         '<select id="mo" style="flex:0 1 210px"><option value="">All time</option>'+
           months.map(function(m){ return '<option value="'+m+'" '+(view.month===m?'selected':'')+'>'+esc(monthName(m))+'</option>'; }).join("")+
         '</select>'+
+        '<select id="sbf" style="flex:0 1 180px"><option value="">All batches</option>'+
+          batchesSorted().map(function(b){
+            return '<option value="'+b.id+'" '+(view.sbatch===b.id?'selected':'')+'>'+esc(batchName(b))+'</option>';
+          }).join("")+
+          (orphanSales().length ? '<option value="__none" '+(view.sbatch==="__none"?'selected':'')+'>Deleted designs</option>' : '')+
+        '</select>'+
         '<select id="shipf" style="flex:0 1 150px"><option value="">All parcels</option>'+
           Object.keys(SHIP).map(function(k){
             return '<option value="'+k+'" '+(view.ship===k?'selected':'')+'>'+SHIP[k]+'</option>';
@@ -1739,20 +2794,23 @@
         '<button class="btn ghost" id="csv" style="flex:0 0 auto">Download as CSV</button>'+
       '</div>'+
       '<div class="kpis" style="margin-bottom:20px">'+
-        kpi("Pieces sold", String(units), view.month?monthName(view.month):"all time")+
+        kpi("Pieces sold", String(units),
+            [view.sbatch && view.sbatch!=="__none" ? batchShort(batchById(view.sbatch)) : "",
+             view.month ? monthName(view.month) : "all time"].filter(Boolean).join(" \u00B7 "))+
         kpi("Money in", inr(rev), "", "", "accent")+
         kpi("Profit", inr(pro), (rev>0?(pro/rev*100).toFixed(0):"0")+"% margin", pro>=0?"pos":"neg", "tint")+
         kpi("Shipping", inr(shipNet), shipNet<0?"out of your pocket":"covered by customers", shipNet>=0?"pos":"neg")+
         kpi("Still owed", inr(owed), owedCount+" parcel"+(owedCount===1?"":"s"), owed>0?"neg":"pos")+
       '</div>'+
       '<div class="card scroll"><table class="tbl"><thead><tr>'+
-        '<th>Date</th><th>Design</th><th>Ship to</th><th class="num">Qty</th>'+
+        '<th>Date</th><th>Batch</th><th>Design</th><th>Ship to</th><th class="num">Qty</th>'+
         '<th class="num">Total</th><th class="num">Profit</th><th>Parcel</th><th></th>'+
       '</tr></thead><tbody>'+
       list.map(function(s){
         const p = saleProfit(s);
         return '<tr>'+
           '<td class="money" style="font-size:12.5px;color:var(--ink-2)">'+esc(niceDate(s.date))+'</td>'+
+          '<td class="muted" style="font-size:12.5px">'+esc(saleBatch(s) ? batchShort(saleBatch(s)) : "\u2014")+'</td>'+
           '<td><span class="money" style="font-size:11.5px;color:var(--ink-3)">'+esc(s.itemCode||"")+'</span>'+
             '<div>'+esc(s.itemName||"\u2014")+'</div>'+
             '<div class="muted" style="font-size:12px">'+esc(s.variantLabel||"")+'</div></td>'+
@@ -1771,6 +2829,7 @@
       '</tbody></table></div>';
 
     $("#mo").onchange = function(e){ view.month = e.target.value; renderSales(); };
+    $("#sbf").onchange = function(e){ view.sbatch = e.target.value; renderSales(); };
     $("#shipf").onchange = function(e){ view.ship = e.target.value; renderSales(); };
     $("#csv").onclick = exportCSV;
     el.querySelectorAll("[data-ship]").forEach(function(b){
@@ -1781,7 +2840,10 @@
         const s = S.sales.find(function(x){ return x.id===b.dataset.undo; });
         ask("Undo this sale?", "The pieces go back into stock and the profit is removed from your totals.", "Undo sale", async function(){
           const it = byId(s.itemId);
-          if (it){ const v = (it.variants||[]).find(function(x){ return x.id===s.variantId; }); if (v) v.qty = n(v.qty) + n(s.qty); }
+          if (it){
+            const v = (it.variants||[]).find(function(x){ return x.id===s.variantId; });
+            if (v) v.qty = n(v.qty) + n(s.qty);
+          }
           S.sales = S.sales.filter(function(x){ return x.id!==s.id; });
           const ok = await save(); render();
           toast(ok ? "Sale undone, stock restored" : "NOT SAVED \u2014 read the warning at the top");
@@ -1856,11 +2918,11 @@
     setTimeout(function(){ URL.revokeObjectURL(u); }, 1500);
   }
   function exportCSV(){
-    const head = ["Date","Code","Design","Size","Qty","Price each (INR)","Total (INR)","Cost each (THB)","Rate used","Cost total (INR)","Shipping charged (INR)","Courier cost (INR)","Profit (INR)","Customer","Phone","Address","Status","Courier","Tracking","Payment","Received (INR)","Due (INR)","How paid"];
+    const head = ["Date","Code","Design","Size","Qty","Price each (INR)","Total (INR)","Batch","Cost each (THB)","Rate used","Landed each (INR)","Cost total (INR)","Shipping charged (INR)","Courier cost (INR)","Profit (INR)","Customer","Phone","Address","Status","Courier","Tracking","Payment","Received (INR)","Due (INR)","How paid"];
     const rows = S.sales.slice().sort(function(a,b){ return (a.date||"").localeCompare(b.date||""); }).map(function(s){
-      const c = costINR(s.buyTHB, s.rate);
+      const c = saleCost(s);
       return [s.date, s.itemCode||"", s.itemName, s.variantLabel, n(s.qty), n(s.unitSellINR), n(s.qty)*n(s.unitSellINR),
-              n(s.buyTHB), n(s.rate), (n(s.qty)*c).toFixed(2),
+              (saleBatch(s) ? batchShort(saleBatch(s)) : (s.batchLabel||"")), n(s.buyTHB), n(s.rate), saleCost(s).toFixed(2), (n(s.qty)*c).toFixed(2),
               n(s.shipCharged), n(s.shipCost), saleProfit(s).toFixed(2),
               s.custName||s.who||"", s.custPhone||"", (s.custAddr||"").replace(/\n/g,", "),
               SHIP[s.ship||"pending"], s.courier||"", s.tracking||"",
